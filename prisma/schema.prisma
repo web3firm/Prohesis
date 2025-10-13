@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @db.VarChar(64)
+  displayName  String?
+  email        String?  @unique
+  avatarUrl    String?
+  bannerUrl    String?
+  emailUpdates Boolean  @default(false)
+  marketAlerts Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  bets         Bet[]
+  markets      Market[] @relation("UserMarkets")
+  payouts      Payout[]
+}
+
+model Market {
+  id        Int      @id @default(autoincrement())
+  title     String
+  totalPool Float    @default(0)
+  endTime   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  creatorId String?
+  bets      Bet[]
+  creator   User?    @relation("UserMarkets", fields: [creatorId], references: [id])
+  payouts   Payout[]
+}
+
+model Bet {
+  id            Int      @id @default(autoincrement())
+  amount        Float
+  createdAt     DateTime @default(now())
+  marketId      Int
+  userId        String?
+  txHash        String   @unique
+  walletChainId Int
+  outcomeIndex  Int
+  walletAddress String
+  market        Market   @relation(fields: [marketId], references: [id])
+  user          User?    @relation(fields: [userId], references: [id])
+}
+
+model Payout {
+  id       Int    @id @default(autoincrement())
+  amount   Float
+  marketId Int
+  userId   String
+  market   Market @relation(fields: [marketId], references: [id])
+  user     User   @relation(fields: [userId], references: [id])
+}

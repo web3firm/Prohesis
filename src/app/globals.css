@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-gradient-to-b from-[#f9fbff] via-[#eef3ff] to-[#e5edff] text-gray-900 antialiased min-h-screen;
+  }
+
+  ::selection {
+    @apply bg-blue-200 text-blue-900;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-xl text-sm font-medium shadow-sm transition-all duration-150;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply bg-white border text-gray-700 hover:bg-blue-50;
+  }
+}
