@@ -5,13 +5,22 @@ import { Spinner } from "@/components/ui/Spinner";
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<{ id: number; address: string; username?: string; createdAt: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/users");
-      const data = await res.json();
-      setUsers(data.list || []);
-      setLoading(false);
+      setError(null);
+      try {
+        const res = await fetch("/api/users");
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        const data = await res.json();
+        setUsers(data.list || []);
+      } catch (e: any) {
+        setError(e.message || "Failed to load users");
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -24,7 +33,9 @@ export default function AdminUsersPage() {
         <p className="text-gray-500">Registered wallet addresses</p>
       </section>
 
-      {users.length === 0 ? (
+      {error ? (
+        <p className="text-center text-red-500">{error}</p>
+      ) : users.length === 0 ? (
         <p className="text-center text-gray-500">No users yet.</p>
       ) : (
         <div className="card p-6 overflow-x-auto">
