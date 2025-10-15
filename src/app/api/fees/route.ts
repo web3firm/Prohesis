@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/offchain/services/dbClient";
 import { createPublicClient, http, getContract } from "viem";
 import { sepolia } from "viem/chains";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
+import db from "@/lib/offchain/services/dbClient";
 import { CONTRACT_ADDRESS } from "@/lib/utils/constants";
 
 export async function GET() {
@@ -10,42 +10,38 @@ export async function GET() {
     const client = createPublicClient({ chain: sepolia, transport: http() });
     const contract = getContract({
       address: CONTRACT_ADDRESS,
-      abi: MarketABI,
+      abi: (MarketABI as any).abi,
       client,
     });
 
     const logs = await client.getLogs({
       address: CONTRACT_ADDRESS,
-      event: {
-        type: "ProtocolFeeCollected",
-        args: ["marketId", "amount", "collector"],
-      },
       fromBlock: BigInt(0),
     });
 
     for (const log of logs) {
-      const { marketId, amount, collector } = log.args;
-      await prisma.fees.upsert({
-        where: {
-          market_id_fee_type: {
-            market_id: Number(marketId),
-            fee_type: "protocol_fee",
+      const args: any = (log as any).args ?? {};
+      const marketId = args.marketId ?? args[0];
+      const amount = args.amount ?? args[1];
+      const collector = args.collector ?? args[2];
+      try {
+        await db.fee.upsert({
+          where: {
+            id: Number(marketId) || 0,
           },
-        },
-        update: {
-          amount: Number(amount) / 1e18,
-          collected_to: collector.toLowerCase(),
-          created_at: new Date(),
-        },
-        create: {
-          market_id: Number(marketId),
-          fee_type: "protocol_fee",
-          amount: Number(amount) / 1e18,
-          collected_to: collector.toLowerCase(),
-          tx_hash: log.transactionHash,
-          created_at: new Date(),
-        },
-      });
+          update: {
+            amount: Number(amount) / 1e18,
+            collectedTo: (collector ?? "").toLowerCase(),
+          },
+          create: {
+            amount: Number(amount) / 1e18,
+            collectedTo: (collector ?? "").toLowerCase(),
+            txHash: log.transactionHash as string,
+          },
+        });
+      } catch (e) {
+        console.warn("fee upsert failed", e);
+      }
     }
 
     return NextResponse.json({ success: true, count: logs.length });

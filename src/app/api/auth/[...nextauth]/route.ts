@@ -1,8 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-const handler = NextAuth({
-  providers: [
+const handler: any = NextAuth({
+  providers: [ 
     Credentials({
       name: "AdminLogin",
       credentials: {
@@ -23,4 +23,6 @@ const handler = NextAuth({
   pages: { signIn: "/login" },
   secret: process.env.NEXTAUTH_SECRET,
 });
-export { handler as GET, handler as POST };
+const GET: any = handler;
+const POST: any = handler;
+export { GET, POST };

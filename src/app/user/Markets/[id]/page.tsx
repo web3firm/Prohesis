@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther, parseEther } from "viem";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
-import { getImpliedOddsFromPools, getOutcomes, getPools, CONTRACT_ADDRESS } from "@/lib/onchain/readFunctions";
+import { getImpliedOddsFromPools, getOutcomes, getPools, CONTRACT_ADDRESS, resolveMarketAddress } from "@/lib/onchain/readFunctions";
 import { recordBet } from "@/lib/offchain/api/bets";
 
 export default function MarketDetailPage() {
@@ -24,6 +24,10 @@ export default function MarketDetailPage() {
   const { data: hash, writeContract, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({ hash });
+
+  // Separate write hook for claim transactions so we can track them independently
+  const { data: claimHash, writeContract: writeClaimContract, isPending: isClaimPending } = useWriteContract();
+  const { isLoading: isClaimConfirming, isSuccess: isClaimConfirmed } = useWaitForTransactionReceipt({ hash: claimHash });
 
   useEffect(() => {
     (async () => {
@@ -54,6 +58,25 @@ export default function MarketDetailPage() {
     });
   }
 
+  async function handleClaim() {
+    if (!isConnected) return alert("Connect your wallet first");
+
+    try {
+      const addr = await resolveMarketAddress(marketId);
+      if (!addr) return alert("Market on-chain address not found");
+
+      // Call claimWinnings from the user's wallet
+      writeClaimContract({
+        abi: MarketABI as any,
+        address: addr as `0x${string}`,
+        functionName: "claimWinnings",
+        args: [] as any,
+      });
+    } catch (e: any) {
+      alert(`Failed to initiate claim: ${e?.message ?? String(e)}`);
+    }
+  }
+
   // 2) After on-chain confirms, record off-chain
   useEffect(() => {
     (async () => {
@@ -67,6 +90,31 @@ export default function MarketDetailPage() {
           alert("✅ Bet recorded!");
         } catch (e: any) {
           alert(`❌ Failed to record bet: ${e.message}`);
+        }
+      }
+
+      // Handle claim confirmation: after user's wallet claimWinnings tx confirms, POST to server to verify & record
+      if (isClaimConfirmed && claimHash && address) {
+        try {
+          // Resolve on-chain address for this market
+          const addr = await resolveMarketAddress(marketId);
+          if (!addr) throw new Error("Market on-chain address not found");
+
+          const res = await fetch("/api/payouts/claim", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ txHash: claimHash, onchainAddr: addr, userId: address }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || "Unknown server error");
+
+          // Refresh pools & UI
+          const p = await getPools(marketId);
+          setPools(p);
+          alert("✅ Claim recorded!");
+        } catch (e: any) {
+          alert(`❌ Failed to record claim: ${e?.message ?? String(e)}`);
         }
       }
     })();
@@ -121,6 +169,14 @@ export default function MarketDetailPage() {
             : isConfirming
             ? "Waiting for confirmation…"
             : "Place Bet"}
+        </button>
+
+        <button
+          onClick={handleClaim}
+          disabled={isClaimPending || isClaimConfirming}
+          className="mt-3 w-full border border-gray-200 bg-white text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50"
+        >
+          {isClaimPending ? "Confirm claim in wallet…" : isClaimConfirming ? "Waiting for claim confirmation…" : "Claim Winnings"}
         </button>
 
         {hash && (

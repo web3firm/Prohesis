@@ -19,6 +19,9 @@ export async function POST(req: Request) {
     }
     const { question, outcomes, endTime, creatorAddress, userId } = parseResult.data;
 
+    // ensure server has signing key for server-signed creation
+    if (!process.env.PRIVATE_KEY) return NextResponse.json({ error: "Server PRIVATE_KEY not configured" }, { status: 500 });
+
     const result = await createMarket({
       question,
       outcomes,

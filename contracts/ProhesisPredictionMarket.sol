@@ -51,14 +51,17 @@ contract ProhesisPredictionMarket {
     }
 
     // ============ Initialization ============
-    function initialize(string memory _title, uint256 _endTime)
+    // initialize now accepts an explicit creator address so the factory can set
+    // the true human/owner as creator (previously the factory contract became
+    // the creator which prevented creators from calling onlyCreator functions).
+    function initialize(string memory _title, uint256 _endTime, address _creator)
         external
         onlyUninitialized
     {
         require(_endTime > block.timestamp + 5 minutes, "Invalid end time");
         title = _title;
         endTime = _endTime;
-        creator = msg.sender;
+        creator = _creator;
         initialized = true;
     }
 

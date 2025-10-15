@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { claimPayout } from "@/lib/onchain/writeFunctions";
+import { verifyClaimTx } from "@/lib/onchain/writeFunctions";
+import { recordPayout } from "@/lib/offchain/api/payouts";
 import { z } from "zod";
 
+// Expect client to call contract.claimWinnings(...) and then POST txHash + marketOnchainAddr
 const claimSchema = z.object({
-  marketId: z.number().int().positive(),
-  userId: z.union([z.number().int().nonnegative(), z.undefined()]),
+  txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
+  onchainAddr: z.string().min(1),
+  userId: z.string().min(1),
 });
 
 export async function POST(req: Request) {
@@ -14,18 +17,15 @@ export async function POST(req: Request) {
     if (!parseResult.success) {
       return NextResponse.json({ error: "Invalid input", details: parseResult.error.issues }, { status: 400 });
     }
-    const { marketId, userId } = parseResult.data;
 
-    const result = await claimPayout({
-      marketId,
-      userId: userId ?? 0,
-    });
+    const { txHash, onchainAddr, userId } = parseResult.data;
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
-    }
+    const decoded = await verifyClaimTx(txHash as `0x${string}`);
 
-    return NextResponse.json(result, { status: 200 });
+    // Record the payout off-chain
+    await recordPayout({ onchainAddr, userWallet: decoded.user, amount: decoded.amountEth, txHash });
+
+    return NextResponse.json({ success: true, decoded }, { status: 200 });
   } catch (error: any) {
     console.error("Claim payout error:", error);
     return NextResponse.json({ error: error.message ?? "Unknown error" }, { status: 500 });

@@ -31,8 +31,10 @@ contract MarketFactory {
     function createMarket(string memory _title, uint256 _endTime) external payable {
         require(msg.value >= creationFee, "Insufficient creation fee");
 
-        ProhesisPredictionMarket market = new ProhesisPredictionMarket();
-        market.initialize(_title, _endTime);
+    ProhesisPredictionMarket market = new ProhesisPredictionMarket();
+    // pass the transaction sender as the market creator so they can resolve
+    // and perform creator-only actions later.
+    market.initialize(_title, _endTime, msg.sender);
 
         allMarkets.push(address(market));
 

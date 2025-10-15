@@ -1,18 +1,18 @@
 import Link from "next/link";
-import { prisma } from "@/lib/offchain/services/dbClient"
+import db from "@/lib/offchain/services/dbClient"
 ;
 
 export const dynamic = "force-dynamic";
 
 async function getData() {
   const [recentTx, recentMarkets] = await Promise.all([
-    prisma.transactions.findMany({
+      db.transaction.findMany({
       orderBy: { created_at: "desc" },
       take: 20,
     }),
-    prisma.markets.findMany({
-      orderBy: { created_at: "desc" },
-      take: 6,
+      db.market.findMany({
+        orderBy: { created_at: "desc" },
+        take: 6,
     }),
   ]);
 

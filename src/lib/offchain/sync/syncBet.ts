@@ -1,4 +1,4 @@
-import prisma from "@/lib/offchain/services/dbClient";
+import db from "@/lib/offchain/services/dbClient";
 
 interface VerifiedBet {
   txHash: string;
@@ -10,13 +10,13 @@ interface VerifiedBet {
 }
 
 export async function syncBetToDB(bet: VerifiedBet) {
-  const exists = await prisma.bet.findUnique({
-    where: { txHash: bet.txHash }, // ✅ works once @unique exists
+  const exists = await db.bet.findUnique({
+    where: { txHash: bet.txHash },
   });
 
   if (exists) return exists;
 
-  return prisma.bet.create({
+  return db.bet.create({
     data: {
       marketId: bet.marketId,
       walletChainId: 11155111,

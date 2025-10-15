@@ -5,8 +5,7 @@ import { z } from "zod";
 const resolveSchema = z.object({
   marketId: z.number().int().positive(),
   winningOutcome: z.number().int().nonnegative(),
-  adminAddress: z.string().min(1),
-  userId: z.union([z.number().int().nonnegative(), z.undefined()]),
+  // server will resolve by marketId or marketAddress; no adminAddress/userId required here
 });
 
 export async function POST(req: Request) {
@@ -16,13 +15,14 @@ export async function POST(req: Request) {
     if (!parseResult.success) {
       return NextResponse.json({ error: "Invalid input", details: parseResult.error.issues }, { status: 400 });
     }
-    const { marketId, winningOutcome, adminAddress, userId } = parseResult.data;
+    const { marketId, winningOutcome } = parseResult.data;
+
+    // server-signed resolve requires PRIVATE_KEY configured
+    if (!process.env.PRIVATE_KEY) return NextResponse.json({ error: "Server PRIVATE_KEY not configured" }, { status: 500 });
 
     const result = await resolveMarket({
       marketId,
       winningOutcome,
-      adminAddress,
-      userId: userId ?? 0,
     });
 
     if (!result.success) {

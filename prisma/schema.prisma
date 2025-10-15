@@ -25,6 +25,7 @@ model User {
 model Market {
   id        Int      @id @default(autoincrement())
   title     String
+  onchainAddr String? @unique
   totalPool Float    @default(0)
   endTime   DateTime
   createdAt DateTime @default(now())

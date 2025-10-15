@@ -1,7 +1,7 @@
 // File: src/app/api/bets/place/route.ts
 
 import { NextResponse } from "next/server";
-import prisma from "@/lib/offchain/services/dbClient";
+import db from "@/lib/offchain/services/dbClient";
 import { verifyBetTx } from "@/lib/onchain/writeFunctions";
 import { getOutcomes } from "@/lib/onchain/readFunctions";
 import { z } from "zod";
@@ -42,32 +42,35 @@ export async function POST(req: Request) {
     const outcomeLabel = outcomes?.[outcomeIndex] ?? `Outcome #${outcomeIndex + 1}`;
 
     // Ensure user exists (optional upsert)
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: "User not found in off-chain DB" }, { status: 404 });
     }
 
     // Ensure market exists off-chain (optional soft create if you prefer)
-    const market = await prisma.market.findUnique({ where: { id: marketId } });
+  const market = await db.market.findUnique({ where: { id: marketId } });
     if (!market) {
       return NextResponse.json({ error: "Market not found in off-chain DB" }, { status: 404 });
     }
 
     // Create bet
-    const bet = await prisma.bet.create({
+    const bet = await db.bet.create({
       data: {
         amount: amountEth,
-        outcome: outcomeLabel,
         marketId: marketId,
         userId: userId,
+        txHash: txHash,
+        walletChainId: 11155111,
+        outcomeIndex: outcomeIndex,
+        walletAddress: decoded.wallet as string,
       },
     });
 
     // Update market totalPool
-    await prisma.market.update({
+    await db.market.update({
       where: { id: marketId },
       data: {
-        totalPool: market.totalPool + amountEth,
+        totalPool: (market.totalPool || 0) + amountEth,
       },
     });
 

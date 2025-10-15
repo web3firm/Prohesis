@@ -1,20 +1,19 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/offchain/services/dbClient";
+import db from "@/lib/offchain/services/dbClient";
 
 export async function GET() {
   try {
-    const [marketCount, betCount, payoutCount, userCount, totalFees] = await Promise.all([
-      prisma.markets.count(),
-      prisma.bets.count(),
-      prisma.payouts.count(),
-      prisma.users.count(),
-      prisma.fees.aggregate({ _sum: { amount: true } }),
+    const [marketCount, betCount, payoutCount, userCount] = await Promise.all([
+      db.market.count(),
+      db.bet.count(),
+      db.payout.count(),
+      db.user.count(),
     ]);
 
-    const recentMarkets = await prisma.markets.findMany({
-      orderBy: { created_at: "desc" },
+    const recentMarkets = await db.market.findMany({
+      orderBy: { createdAt: "desc" },
       take: 5,
-      select: { id: true, title: true, status: true, created_at: true },
+      select: { id: true, title: true, createdAt: true },
     });
 
     return NextResponse.json({
@@ -22,7 +21,7 @@ export async function GET() {
       betCount,
       payoutCount,
       userCount,
-      totalFees: totalFees._sum.amount || 0,
+  totalFees: 0,
       recentMarkets,
     });
   } catch (error: any) {
