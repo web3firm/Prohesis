@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveMarket } from "@/lib/onchain/writeFunctions";
 import { z } from "zod";
+import { jsonError } from '@/lib/api/errorResponse';
 
 const resolveSchema = z.object({
   marketId: z.number().int().positive(),
@@ -13,12 +14,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const parseResult = resolveSchema.safeParse(body);
     if (!parseResult.success) {
-      return NextResponse.json({ error: "Invalid input", details: parseResult.error.issues }, { status: 400 });
+      return jsonError('Invalid input', 400, parseResult.error.issues);
     }
     const { marketId, winningOutcome } = parseResult.data;
 
     // server-signed resolve requires PRIVATE_KEY configured
-    if (!process.env.PRIVATE_KEY) return NextResponse.json({ error: "Server PRIVATE_KEY not configured" }, { status: 500 });
+  if (!process.env.PRIVATE_KEY) return jsonError('Server PRIVATE_KEY not configured', 500);
 
     const result = await resolveMarket({
       marketId,
@@ -26,12 +27,12 @@ export async function POST(req: Request) {
     });
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      return jsonError(result.error ?? 'Resolve failed', 500);
     }
 
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error("Resolve market error:", error);
-    return NextResponse.json({ error: error.message ?? "Unknown error" }, { status: 500 });
+    return jsonError(error?.message ?? 'Unknown error', 500);
   }
 }

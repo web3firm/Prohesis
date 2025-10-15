@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAnalytics } from "@/lib/offchain/services/analyticsService";
+import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
@@ -7,6 +8,6 @@ export async function GET() {
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
     console.error("Analytics route error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

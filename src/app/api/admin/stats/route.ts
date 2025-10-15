@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/offchain/services/dbClient";
+import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
@@ -26,6 +27,6 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error("Admin stats error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

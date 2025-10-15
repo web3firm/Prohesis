@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
@@ -20,6 +21,6 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error("Cron run error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

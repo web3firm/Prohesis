@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/offchain/services/dbClient";
 import { listFactoryMarkets, getOutcomesForMarket, getPoolsForMarket } from "@/lib/onchain/readFunctions";
+import { jsonError } from '@/lib/api/errorResponse';
 
 // Patch: Return structure expected by MarketCard (id, title, endTime, yesPool, noPool)
 export async function GET() {
@@ -65,6 +66,6 @@ export async function GET() {
     return NextResponse.json(mapped, { status: 200 });
   } catch (error: any) {
     console.error("Markets list error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

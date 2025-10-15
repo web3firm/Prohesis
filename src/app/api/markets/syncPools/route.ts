@@ -61,6 +61,8 @@ export async function GET() {
     return NextResponse.json({ success: true, count: markets.length });
   } catch (e: any) {
     console.error("Pool sync error", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    // Use helper lazily to avoid changing runtime semantics for callers of this endpoint
+    const { jsonError } = await import('@/lib/api/errorResponse');
+    return jsonError(e?.message ?? 'Internal server error', 500);
   }
 }

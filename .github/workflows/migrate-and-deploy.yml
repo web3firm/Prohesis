@@ -114,3 +114,68 @@ jobs:
               -d "$payload" \
               | jq '.' || true
           fi
+  deploy_web:
+    name: Build & Deploy web (optional)
+    needs: migrate
+    runs-on: ubuntu-latest
+    if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_PROJECT_ID != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Trigger Vercel Deploy (via API)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "Triggering Vercel deployment via Vercel API"
+          DEPLOY_URL="https://api.vercel.com/v13/now/deployments"
+          payload=$(jq -n --arg projectId "${VERCEL_PROJECT_ID}" '{project: $projectId, target: "production"}')
+          curl -s -X POST "$DEPLOY_URL" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            | jq '.' || true
+
+    smoke_tests:
+      name: Smoke tests
+      needs: [migrate]
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20'
+
+        - name: Install dependencies
+          run: npm ci
+
+        - name: Build
+          run: npm run build
+
+        - name: Start server
+          run: |
+            nohup npm run start &
+            sleep 2
+
+        - name: Run smoke tests
+          env:
+            HOST: http://localhost:3000
+          run: |
+            node scripts/smoke-test.mjs
+
+

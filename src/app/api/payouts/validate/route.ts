@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/offchain/services/dbClient";
 import { z } from "zod";
+import { jsonError } from '@/lib/api/errorResponse';
 
 const querySchema = z.object({
   marketId: z.string().regex(/^\d+$/),
-  userId: z.string().regex(/^\d+$/),
+  userId: z.string().min(1),
 });
 
 export async function GET(req: Request) {
@@ -15,10 +16,10 @@ export async function GET(req: Request) {
       userId: searchParams.get("userId"),
     });
     if (!parseResult.success) {
-      return NextResponse.json({ error: "marketId and userId are required and must be numbers", details: parseResult.error.issues }, { status: 400 });
+      return jsonError('marketId and userId are required and must be numbers', 400, parseResult.error.issues);
     }
-    const marketId = Number(parseResult.data.marketId);
-    const userId = Number(parseResult.data.userId);
+  const marketId = Number(parseResult.data.marketId);
+  const userIdRaw = parseResult.data.userId;
 
     const market = await prisma.markets.findUnique({
       where: { id: marketId },
@@ -30,21 +31,22 @@ export async function GET(req: Request) {
       return NextResponse.json({ canClaim: false, reason: "Market not resolved yet" });
     }
 
-    const userBet = await prisma.bets.findFirst({
-      where: { market_id: marketId, user_id: userId },
+    // Try by numeric user id or wallet address
+    const userBet = await prisma.bet.findFirst({
+      where: { marketId: marketId, OR: [{ userId: String(userIdRaw) }, { walletAddress: String(userIdRaw) }] },
     });
     if (!userBet) {
       return NextResponse.json({ canClaim: false, reason: "No bet placed by this user" });
     }
 
-    const alreadyClaimed = await prisma.payouts.findFirst({
-      where: { market_id: marketId, user_id: userId, claimed: true },
+    const alreadyClaimed = await prisma.payout.findFirst({
+      where: { marketId: marketId, userId: String(userIdRaw) },
     });
-    if (alreadyClaimed) {
-      return NextResponse.json({ canClaim: false, reason: "Payout already claimed" });
-    }
+    if (alreadyClaimed) return NextResponse.json({ canClaim: false, reason: "Payout already recorded" });
 
-    const winning = market.resolved_outcome_index === userBet.outcome_index;
+    // Determine winning by comparing market.winningOutcome (or winning) with bet.outcomeIndex
+    const marketWinIdx = (market as any).winning ?? (market as any).winningOutcome ?? (market as any).resolved_outcome_index;
+    const winning = Number(marketWinIdx) === Number((userBet as any).outcomeIndex ?? (userBet as any).outcome_index);
 
     return NextResponse.json({
       canClaim: winning,
@@ -52,6 +54,6 @@ export async function GET(req: Request) {
     });
   } catch (error: any) {
     console.error("Validate payout error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

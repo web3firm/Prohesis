@@ -8,6 +8,7 @@ import { formatEther, parseEther } from "viem";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import { getImpliedOddsFromPools, getOutcomes, getPools, CONTRACT_ADDRESS, resolveMarketAddress } from "@/lib/onchain/readFunctions";
 import { recordBet } from "@/lib/offchain/api/bets";
+import DBGuard from '@/components/ui/DBGuard';
 
 export default function MarketDetailPage() {
   const params = useParams<{ id: string }>();
@@ -16,6 +17,7 @@ export default function MarketDetailPage() {
   const { isConnected, address } = useAccount();
   const [outcomes, setOutcomes] = useState<string[]>([]);
   const [pools, setPools] = useState<number[]>([]);
+  const [fetchError, setFetchError] = useState<any>(null);
   const odds = useMemo(() => getImpliedOddsFromPools(pools), [pools]);
 
   const [amount, setAmount] = useState<string>("");
@@ -32,11 +34,13 @@ export default function MarketDetailPage() {
   useEffect(() => {
     (async () => {
       try {
+        setFetchError(null);
         const o = await getOutcomes(marketId);
         setOutcomes(o.length ? o : ["Yes", "No"]); // fallback UI
         const p = await getPools(marketId);
         setPools(p);
-      } catch (e) {
+      } catch (e: any) {
+        setFetchError(e);
         setOutcomes(["Yes", "No"]);
         setPools([0, 0]);
       }
@@ -122,6 +126,17 @@ export default function MarketDetailPage() {
 
   return (
     <main className="max-w-3xl mx-auto p-6">
+      <DBGuard error={fetchError} onRetry={async () => {
+        setFetchError(null);
+        try {
+          const o = await getOutcomes(marketId);
+          setOutcomes(o.length ? o : ["Yes", "No"]);
+          const p = await getPools(marketId);
+          setPools(p);
+        } catch (e: any) {
+          setFetchError(e);
+        }
+      }} />
       <h1 className="text-3xl font-bold mb-4 text-center tracking-tight">Market #{marketId}</h1>
 
       {/* Outcomes with odds and pools */}

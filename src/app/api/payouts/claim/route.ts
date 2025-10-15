@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyClaimTx } from "@/lib/onchain/writeFunctions";
 import { recordPayout } from "@/lib/offchain/api/payouts";
 import { z } from "zod";
+import { jsonError } from '@/lib/api/errorResponse';
 
 // Expect client to call contract.claimWinnings(...) and then POST txHash + marketOnchainAddr
 const claimSchema = z.object({
@@ -14,8 +15,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parseResult = claimSchema.safeParse(body);
-    if (!parseResult.success) {
-      return NextResponse.json({ error: "Invalid input", details: parseResult.error.issues }, { status: 400 });
+    if (!parseResult.success) { 
+      return jsonError('Invalid input', 400, parseResult.error.issues);
     }
 
     const { txHash, onchainAddr, userId } = parseResult.data;
@@ -28,6 +29,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, decoded }, { status: 200 });
   } catch (error: any) {
     console.error("Claim payout error:", error);
-    return NextResponse.json({ error: error.message ?? "Unknown error" }, { status: 500 });
+    return jsonError(error?.message ?? 'Unknown error', 500);
   }
 }

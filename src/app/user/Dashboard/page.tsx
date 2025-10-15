@@ -5,14 +5,16 @@ import db from "@/lib/offchain/services/dbClient"
 export const dynamic = "force-dynamic";
 
 async function getData() {
+  // `transaction` model isn't present in the Prisma schema; use recent bets
+  // as recent activity instead.
   const [recentTx, recentMarkets] = await Promise.all([
-      db.transaction.findMany({
-      orderBy: { created_at: "desc" },
+    db.bet.findMany({
+      orderBy: { createdAt: "desc" },
       take: 20,
     }),
-      db.market.findMany({
-        orderBy: { created_at: "desc" },
-        take: 6,
+    db.market.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 6,
     }),
   ]);
 

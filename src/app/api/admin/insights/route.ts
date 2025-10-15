@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAnalytics } from "@/lib/offchain/services/analyticsService";
 import { getAdminStats } from "@/lib/offchain/services/adminStatsService";
+import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
@@ -12,6 +13,6 @@ export async function GET() {
     return NextResponse.json({ success: true, analytics, stats });
   } catch (error: any) {
     console.error("Admin insights error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

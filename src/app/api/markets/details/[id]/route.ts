@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import db from "@/lib/offchain/services/dbClient";
 import { getOutcomesForMarket, getPoolsForMarket } from "@/lib/onchain/readFunctions";
 import { z } from "zod";
+import { jsonError } from '@/lib/api/errorResponse';
 
 interface Params { params: { id: string } }
 
@@ -16,7 +17,7 @@ export async function GET(_: Request, context: any) {
   try {
     const parseResult = idSchema.safeParse(params);
     if (!parseResult.success) {
-      return NextResponse.json({ error: "Invalid id", details: parseResult.error.issues }, { status: 400 });
+      return jsonError('Invalid id', 400, parseResult.error.issues);
     }
     const id = Number(parseResult.data.id);
     let market = await db.market.findUnique({
@@ -24,7 +25,7 @@ export async function GET(_: Request, context: any) {
       include: { bets: true, payouts: true },
     });
 
-    if (!market) return NextResponse.json({ error: "Market not found" }, { status: 404 });
+  if (!market) return jsonError('Market not found', 404);
 
     // If we have an onchain address, fetch pools/outcomes directly
     if (market.onchainAddr) {
@@ -38,6 +39,6 @@ export async function GET(_: Request, context: any) {
     return NextResponse.json({ id: String(market.id), title: market.title, endTime: new Date(market.endTime).getTime(), yesPool: 0, noPool: 0 });
   } catch (e: any) {
     console.error("Market details error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return jsonError(e?.message ?? 'Internal server error', 500);
   }
 }

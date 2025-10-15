@@ -5,6 +5,7 @@ import db from "@/lib/offchain/services/dbClient";
 import { verifyBetTx } from "@/lib/onchain/writeFunctions";
 import { getOutcomes } from "@/lib/onchain/readFunctions";
 import { z } from "zod";
+import { jsonError } from '@/lib/api/errorResponse';
 
 const betSchema = z.object({
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const parseResult = betSchema.safeParse(body);
     if (!parseResult.success) {
-      return NextResponse.json({ error: "Invalid input", details: parseResult.error.issues }, { status: 400 });
+      return jsonError('Invalid input', 400, parseResult.error.issues);
     }
     const { txHash, userId } = parseResult.data;
 
@@ -44,13 +45,13 @@ export async function POST(req: Request) {
     // Ensure user exists (optional upsert)
   const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
-      return NextResponse.json({ error: "User not found in off-chain DB" }, { status: 404 });
+      return jsonError('User not found in off-chain DB', 404);
     }
 
     // Ensure market exists off-chain (optional soft create if you prefer)
   const market = await db.market.findUnique({ where: { id: marketId } });
     if (!market) {
-      return NextResponse.json({ error: "Market not found in off-chain DB" }, { status: 404 });
+      return jsonError('Market not found in off-chain DB', 404);
     }
 
     // Create bet
@@ -77,6 +78,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, bet, decoded }, { status: 200 });
   } catch (error: any) {
     console.error("Place bet error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

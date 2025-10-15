@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import db from "@/lib/offchain/services/dbClient";
+import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET(request: Request) {
   try {
@@ -8,6 +9,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ users });
   } catch (error: any) {
     console.error("Users fetch error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

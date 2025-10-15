@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createMarket } from "@/lib/onchain/writeFunctions";
 import { z } from "zod";
+import { jsonError } from '@/lib/api/errorResponse';
 
 const createMarketSchema = z.object({
   question: z.string().min(1),
@@ -15,12 +16,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const parseResult = createMarketSchema.safeParse(body);
     if (!parseResult.success) {
-      return NextResponse.json({ error: "Invalid input", details: parseResult.error.issues }, { status: 400 });
+      return jsonError('Invalid input', 400, parseResult.error.issues);
     }
     const { question, outcomes, endTime, creatorAddress, userId } = parseResult.data;
 
     // ensure server has signing key for server-signed creation
-    if (!process.env.PRIVATE_KEY) return NextResponse.json({ error: "Server PRIVATE_KEY not configured" }, { status: 500 });
+  if (!process.env.PRIVATE_KEY) return jsonError('Server PRIVATE_KEY not configured', 500);
 
     const result = await createMarket({
       question,
@@ -34,6 +35,6 @@ export async function POST(req: Request) {
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error("Create market error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

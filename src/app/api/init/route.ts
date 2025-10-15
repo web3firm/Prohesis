@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { startEventListener } from "@/lib/onchain/eventSync";
+import { jsonError } from '@/lib/api/errorResponse';
 
 let started = false;
 
@@ -12,6 +13,6 @@ export async function GET() {
     return NextResponse.json({ status: "Event listener active" });
   } catch (e: any) {
     console.error("Init event listener error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return jsonError(e?.message ?? 'Internal server error', 500);
   }
 }

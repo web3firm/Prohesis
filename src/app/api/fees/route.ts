@@ -4,6 +4,7 @@ import { sepolia } from "viem/chains";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import db from "@/lib/offchain/services/dbClient";
 import { CONTRACT_ADDRESS } from "@/lib/utils/constants";
+import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
@@ -47,6 +48,6 @@ export async function GET() {
     return NextResponse.json({ success: true, count: logs.length });
   } catch (error: any) {
     console.error("Fee sync error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }
