@@ -75,3 +75,10 @@ If you want, I can:
 - Add a short Playwright smoke test to the workflow to verify the deployed site renders market cards.
 
 Tell me which optional automation you'd like next.
+
+Rotate Vercel token (recommended)
+--------------------------------
+- In Vercel: Settings → Tokens → Create Token. Give it a short expiry and the minimal scopes needed (project: read/write environment variables).
+- In GitHub: Settings → Secrets → Actions → New repository secret. Add `VERCEL_TOKEN` with the token value and ensure `VERCEL_PROJECT_ID` is also present.
+- Update the secret in GitHub if you rotate the token; then run `npm run upsert-vercel` locally or let CI run on next deploy.
+

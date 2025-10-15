@@ -14,6 +14,7 @@
     "deploy": "hardhat run src/scripts/deployFactoryAndMarket.mjs --network sepolia"
     ,"sync:pools": "node scripts/syncPools.mjs"
     ,"cron:run": "node scripts/runCron.mjs"
+    ,"upsert-vercel": "node scripts/upsert-vercel-env.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",

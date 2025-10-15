@@ -1,112 +1,114 @@
-'use strict';
+#!/usr/bin/env node
+import { readFile } from 'fs/promises'
 
-// Usage: VERCEL_TOKEN=... VERCEL_PROJECT_ID=... node scripts/upsert-vercel-env.mjs
-// Reads .env in repository root and upserts each entry into Vercel project envs (production + preview).
+const ENV_PATH = `${process.cwd()}/.env`
 
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const ENV_FILE = path.resolve(__dirname, '../.env');
-
-function parseEnv(content){
-  const lines = content.split(/\r?\n/);
-  const map = new Map();
-  for (let line of lines){
-    line = line.trim();
-    if (!line) continue;
-    if (line.startsWith('#')) continue;
-    const idx = line.indexOf('=');
-    if (idx === -1) continue;
-    const key = line.substring(0, idx).trim();
-    let value = line.substring(idx+1);
-    value = value.replace(/^\"|\"$/g, '');
-    map.set(key, value);
+function parseDotenv(src) {
+  const lines = src.split(/\r?\n/)
+  const out = []
+  for (let line of lines) {
+    line = line.trim()
+    if (!line || line.startsWith('#')) continue
+    const idx = line.indexOf('=')
+    if (idx === -1) continue
+    const key = line.slice(0, idx).trim()
+    let value = line.slice(idx + 1)
+    // remove surrounding quotes
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1)
+    }
+    out.push({ key, value })
   }
-  return map;
+  return out
 }
 
-async function fetchJson(url, opts){
-  const res = await fetch(url, opts);
-  const text = await res.text();
-  let json = null;
-  try { json = JSON.parse(text); } catch (e) { throw new Error(`Invalid JSON from ${url}: ${text.slice(0,300)}`); }
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${JSON.stringify(json)}`);
-  return json;
+async function fetchJson(url, opts = {}) {
+  const res = await fetch(url, opts)
+  const text = await res.text()
+  try {
+    return { status: res.status, body: JSON.parse(text) }
+  } catch (e) {
+    return { status: res.status, body: text }
+  }
 }
 
-async function main(){
-  const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
-  const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
-  if (!VERCEL_TOKEN || !VERCEL_PROJECT_ID){
-    console.error('Please set VERCEL_TOKEN and VERCEL_PROJECT_ID environment variables.');
-    process.exit(2);
+async function main() {
+  const token = process.env.VERCEL_TOKEN
+  const projectId = process.env.VERCEL_PROJECT_ID
+  if (!token || !projectId) {
+    console.error('Missing VERCEL_TOKEN or VERCEL_PROJECT_ID in environment')
+    process.exit(1)
   }
 
-  if (!fs.existsSync(ENV_FILE)){
-    console.error('.env file not found at', ENV_FILE);
-    process.exit(1);
-  }
-  const content = fs.readFileSync(ENV_FILE, 'utf8');
-  const envMap = parseEnv(content);
-  if (envMap.size === 0){
-    console.log('.env parsed but no entries found.');
-    return;
+  let src
+  try {
+    src = await readFile(ENV_PATH, 'utf8')
+  } catch (e) {
+    console.error('Could not read .env file in repo root:', ENV_PATH)
+    process.exit(1)
   }
 
-  const listUrl = `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env`;
-  const existing = await fetchJson(listUrl, { headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}` } });
+  const entries = parseDotenv(src)
+  if (!entries.length) {
+    console.log('No env entries found in .env')
+    return
+  }
 
-  for (const [key, value] of envMap.entries()){
-    const target = ['production','preview'];
-    const type = key.startsWith('NEXT_PUBLIC_') ? 'plain' : 'encrypted';
-    const found = (existing.env || []).find(e => e.key === key);
-    if (found){
-      const id = found.id;
-      console.log(`Patching ${key} (id: ${id})`);
-      const patchUrl = `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env/${id}`;
-      const payload = { value, target, type };
-      try{
-        const res = await fetchJson(patchUrl, { method: 'PATCH', headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        console.log({ key: res.key, id: res.id, target: res.target });
-      }catch(e){
-        console.error('Failed to patch', key, e.message);
+  const listUrl = `https://api.vercel.com/v9/projects/${projectId}/env?limit=1000`
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+
+  // fetch existing list
+  const listRes = await fetchJson(listUrl, { headers })
+  // Vercel may return `envs` or `env` depending on API shape; handle both
+  const existing = (listRes.body && (listRes.body.envs || listRes.body.env)) || []
+
+  for (const { key, value } of entries) {
+    const type = key.startsWith('NEXT_PUBLIC_') ? 'plain' : 'encrypted'
+    const found = existing.find(e => e.key === key)
+    if (found) {
+      const id = found.id
+      const patchUrl = `https://api.vercel.com/v9/projects/${projectId}/env/${id}`
+      const payload = { value, target: ['production', 'preview'], type }
+      const res = await fetchJson(patchUrl, { method: 'PATCH', headers, body: JSON.stringify(payload) })
+      if (res.status >= 200 && res.status < 300) {
+        console.log(JSON.stringify({ key, action: 'patched', id }))
+      } else {
+        console.log(JSON.stringify({ key, action: 'patch_failed', status: res.status, body: res.body }))
       }
     } else {
-      console.log(`Creating ${key}`);
-      const createUrl = `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env`;
-      const payload = { key, value, target, type };
-      try{
-        const res = await fetchJson(createUrl, { method: 'POST', headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        console.log({ key: res.key, id: res.id, target: res.target });
-        // update local existing list so newly created keys are considered
-        existing.env = existing.env || [];
-        existing.env.push(res);
-      }catch(e){
-          console.error('Failed to create', key, e.message);
-          // If the env already exists (race or paginated list), try to re-fetch and patch the existing entry
-          try{
-            const refreshed = await fetchJson(listUrl, { headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}` } });
-            const foundNow = (refreshed.env || []).find(e => e.key === key);
-            if (foundNow){
-              const idNow = foundNow.id;
-              console.log(`Detected existing ${key} after create failure; patching id ${idNow}`);
-              const patchUrlNow = `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env/${idNow}`;
-              const payloadNow = { value, target, type };
-              const patched = await fetchJson(patchUrlNow, { method: 'PATCH', headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payloadNow) });
-              console.log({ key: patched.key, id: patched.id, target: patched.target });
-              existing.env = existing.env || [];
-              existing.env.push(patched);
-            }
-          }catch(e2){
-            console.error('Secondary patch attempt failed for', key, e2.message);
+      const payload = { key, value, target: ['production', 'preview'], type }
+      const res = await fetchJson(listUrl, { method: 'POST', headers, body: JSON.stringify(payload) })
+      if (res.status >= 200 && res.status < 300) {
+        const id = res.body && res.body.id
+        console.log(JSON.stringify({ key, action: 'created', id }))
+        // update existing list so subsequent runs can find it
+        existing.push({ key, id })
+  } else if (res.status === 409 || res.status === 403 || (res.body && res.body.error && res.body.error.code === 'ENV_ALREADY_EXISTS')) {
+        // race: env already exists, fetch again and patch
+  const refresh = await fetchJson(listUrl, { headers })
+        const refreshed = (refresh.body && refresh.body.env) || []
+        const foundNow = refreshed.find(e => e.key === key)
+        if (foundNow) {
+          const id = foundNow.id
+          const patchUrl = `https://api.vercel.com/v9/projects/${projectId}/env/${id}`
+          const payload2 = { value, target: ['production', 'preview'], type }
+          const r2 = await fetchJson(patchUrl, { method: 'PATCH', headers, body: JSON.stringify(payload2) })
+          if (r2.status >= 200 && r2.status < 300) {
+            console.log(JSON.stringify({ key, action: 'patched_after_conflict', id }))
+          } else {
+            console.log(JSON.stringify({ key, action: 'patch_after_conflict_failed', status: r2.status, body: r2.body }))
           }
+        } else {
+          console.log(JSON.stringify({ key, action: 'create_conflict_no_id', status: res.status, body: res.body }))
+        }
+      } else {
+        console.log(JSON.stringify({ key, action: 'create_failed', status: res.status, body: res.body }))
       }
     }
   }
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch(err => {
+  console.error('Unhandled error:', err)
+  process.exit(1)
+})

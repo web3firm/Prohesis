@@ -1,7 +1,5 @@
 import { MarketCard } from "@/components/ui/MarketCard";
-import dynamic from 'next/dynamic';
-
-const MarketListClient = dynamic(() => import('@/components/Markets/MarketListClient'), { ssr: false });
+import MarketListClient from '@/components/Markets/MarketListClient';
 import db from "@/lib/offchain/services/dbClient";
 
 export default async function UserPage() {
