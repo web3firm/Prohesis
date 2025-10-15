@@ -1,4 +1,7 @@
 import { MarketCard } from "@/components/ui/MarketCard";
+import dynamic from 'next/dynamic';
+
+const MarketListClient = dynamic(() => import('@/components/Markets/MarketListClient'), { ssr: false });
 import db from "@/lib/offchain/services/dbClient";
 
 export default async function UserPage() {
@@ -8,34 +11,22 @@ export default async function UserPage() {
     select: { id: true, title: true, endTime: true, totalPool: true, onchainAddr: true },
   });
 
-  const markets = await Promise.all(
-    rawMarkets.map(async (m: any) => {
-      // If onchain address exists, try to fetch pools for more accurate splits.
-      let yesPool = 0;
-      let noPool = 0;
-      try {
-        if (m.onchainAddr) {
-          const { getPoolsForMarket } = await import("@/lib/onchain/readFunctions");
-          const pools = await getPoolsForMarket(m.onchainAddr as `0x${string}`);
-          yesPool = pools?.[0] ?? 0;
-          noPool = pools?.[1] ?? 0;
-        } else if (typeof m.totalPool === "number") {
-          // If only totalPool is known, naively split half/half for display
-          yesPool = noPool = m.totalPool / 2;
-        }
-      } catch {
-        yesPool = noPool = 0;
-      }
-
-      return {
-        id: String(m.id),
-        title: m.title ?? "Untitled",
-        endTime: m.endTime ? new Date(m.endTime).getTime() : 0,
-        yesPool,
-        noPool,
-      };
-    })
-  );
+  // Avoid making on-chain RPC calls during server rendering — use the cached
+  // `totalPool` field from the database to keep page loads fast. Pools can be
+  // synced in the background via `api/markets/syncPools` when needed.
+  type MarketSummary = { id: string; title: string; endTime: number; yesPool: number; noPool: number };
+  const markets: MarketSummary[] = rawMarkets.map((m: any) => {
+    const total = typeof m.totalPool === "number" ? m.totalPool : 0;
+    const yesPool = total / 2;
+    const noPool = total / 2;
+    return {
+      id: String(m.id),
+      title: m.title ?? "Untitled",
+      endTime: m.endTime ? new Date(m.endTime).getTime() : 0,
+      yesPool,
+      noPool,
+    };
+  });
 
   return (
     <main className="max-w-6xl mx-auto p-6">
@@ -44,7 +35,8 @@ export default async function UserPage() {
         {markets.length === 0 ? (
           <div className="col-span-full text-center text-gray-500 py-12">No markets found.</div>
         ) : (
-          markets.map((market) => <MarketCard key={market.id} market={market} />)
+          // Server-rendered initial grid; client component will hydrate and refresh
+          <MarketListClient initialData={markets} />
         )}
       </div>
     </main>

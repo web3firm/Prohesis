@@ -1,0 +1,116 @@
+name: Migrate and (optionally) Deploy Contracts
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    name: Run Prisma migrations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "DATABASE_URL secret is not set — skipping migrations";
+            exit 1;
+          fi
+          npx prisma migrate deploy
+
+  deploy_contracts:
+    name: Deploy contracts (optional)
+    needs: migrate
+    runs-on: ubuntu-latest
+    # Only run when PRIVATE_KEY is provided in secrets
+    if: ${{ secrets.PRIVATE_KEY != '' && secrets.SEPOLIA_RPC_URL != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts
+        run: npm run compile
+
+      - name: Deploy contracts (Hardhat)
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          # Run the existing deploy script. It will print the factory + market info.
+          npx hardhat run src/scripts/deployFactoryAndMarket.cjs --network sepolia 2>&1 | tee deploy.log
+
+      - name: Show deploy output (grep for addresses)
+        run: |
+          echo "---- deploy.log ----";
+          sed -n '1,200p' deploy.log || true;
+          echo "---- End deploy.log ----";
+
+      - name: Update Vercel env with factory address (optional)
+        if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_PROJECT_ID != '' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          # Extract factory address from deploy.log (expects line like: "Factory deployed at: 0x...")
+          FACTORY_ADDR=$(grep -m1 "Factory deployed at:" deploy.log | awk '{print $3}') || true
+          if [ -z "${FACTORY_ADDR}" ]; then
+            echo "Factory address not found in deploy.log; skipping Vercel env update"
+            exit 0
+          fi
+          echo "Factory address: ${FACTORY_ADDR}"
+
+          echo "Installing jq (required to parse Vercel responses)"
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+          # Use Vercel v9 env endpoints to detect existing env and create/patch accordingly
+          list_url="https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env"
+          existing=$(curl -sS -H "Authorization: Bearer ${VERCEL_TOKEN}" "${list_url}")
+
+          # Look for existing env var by key
+          ENV_KEY="NEXT_PUBLIC_FACTORY_CONTRACT"
+          env_id=$(echo "$existing" | jq -r --arg key "$ENV_KEY" '.env[]? | select(.key==$key) | .id' || true)
+
+          if [ -n "$env_id" ] && [ "$env_id" != "null" ]; then
+            echo "Patching existing $ENV_KEY (id: $env_id) ..."
+            payload=$(jq -n --arg value "$FACTORY_ADDR" '{value:$value,target:["production","preview"],type:"plain"}')
+            curl -sS -X PATCH "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env/$env_id" \
+              -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "$payload" \
+              | jq '.' || true
+          else
+            echo "Creating $ENV_KEY ..."
+            payload=$(jq -n --arg key "$ENV_KEY" --arg value "$FACTORY_ADDR" '{key:$key,value:$value,target:["production","preview"],type:"plain"}')
+            curl -sS -X POST "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env" \
+              -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "$payload" \
+              | jq '.' || true
+          fi

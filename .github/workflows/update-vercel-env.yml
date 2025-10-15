@@ -1,0 +1,35 @@
+name: Update Vercel Environment Variable
+
+on:
+  workflow_dispatch:
+    inputs:
+      factory_addr:
+        description: 'Factory contract address to set' 
+        required: true
+        default: ''
+
+jobs:
+  update-vercel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update NEXT_PUBLIC_FACTORY_CONTRACT in Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          FACTORY_ADDR="${{ github.event.inputs.factory_addr }}"
+          if [ -z "${VERCEL_TOKEN}" ]; then
+            echo "VERCEL_TOKEN not set"; exit 1;
+          fi
+          if [ -z "${VERCEL_PROJECT_ID}" ]; then
+            echo "VERCEL_PROJECT_ID not set"; exit 1;
+          fi
+          if [ -z "${FACTORY_ADDR}" ]; then
+            echo "factory_addr input is empty"; exit 1;
+          fi
+          echo "Updating NEXT_PUBLIC_FACTORY_CONTRACT to ${FACTORY_ADDR}";
+          curl -s -X PATCH "https://api.vercel.com/v8/projects/${VERCEL_PROJECT_ID}/env" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"key":"NEXT_PUBLIC_FACTORY_CONTRACT","value":"'"${FACTORY_ADDR}"'","target":["production","preview"]}' \
+            | jq '.' || true

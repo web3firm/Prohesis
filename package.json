@@ -12,6 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "compile": "hardhat compile",
     "deploy": "hardhat run src/scripts/deployFactoryAndMarket.mjs --network sepolia"
+    ,"sync:pools": "node scripts/syncPools.mjs"
+    ,"cron:run": "node scripts/runCron.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",

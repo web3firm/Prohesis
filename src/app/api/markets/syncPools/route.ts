@@ -12,19 +12,9 @@ const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MARKET_CONTRACT as `0x${string}
 
 export async function GET() {
   try {
-    if (!CONTRACT_ADDRESS) {
-      return NextResponse.json(
-        { error: "NEXT_PUBLIC_MARKET_CONTRACT not set" },
-        { status: 500 }
-      );
-    }
-
-    const client = createPublicClient({ chain: sepolia, transport: http() });
-    const contract = getContract({
-      address: CONTRACT_ADDRESS as `0x${string}`,
-      abi: MarketABI as any,
-      client,
-    });
+    // No global CONTRACT_ADDRESS required here — we will read per-market
+    // on-chain addresses from the DB and call getPoolsForMarket which already
+    // constructs a market contract for each address.
 
     // ⬇️ Pick the correct Prisma model name for your schema.
     // If your Prisma model is `model Market { ... }`, the client is `prisma.market`.
