@@ -32,6 +32,9 @@ jobs:
           if [ -d .next ]; then
             tar -czf .next.tar.gz .next
             echo "Packaged .next -> .next.tar.gz"
+            echo "Working dir: $(pwd)"
+            ls -la .next.tar.gz || ls -la || true
+            du -sh .next || true
           else
             echo ".next directory not found; build may have failed"
             exit 1
