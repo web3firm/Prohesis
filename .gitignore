@@ -27,3 +27,7 @@ prisma/migrations
 Thumbs.db
 
 /src/generated/prisma
+
+# Local dev artifacts
+next-dev.log
+tmp/
