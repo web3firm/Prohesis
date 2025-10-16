@@ -135,6 +135,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Fix next chunks (ensure vendor-chunks symlink)
+        run: node scripts/fix-next-chunks.mjs
+
       - name: Trigger Vercel Deploy (via API)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -168,6 +171,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Fix next chunks (ensure vendor-chunks symlink)
+        run: node scripts/fix-next-chunks.mjs
+
       - name: Start server
         run: |
           nohup npm run start &
@@ -198,6 +204,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Fix next chunks (ensure vendor-chunks symlink)
+        run: node scripts/fix-next-chunks.mjs
 
       - name: Start server
         run: |
@@ -230,6 +239,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Fix next chunks (ensure vendor-chunks symlink)
+        run: node scripts/fix-next-chunks.mjs
 
       - name: Start server
         run: |
