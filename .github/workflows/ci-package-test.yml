@@ -1,0 +1,47 @@
+name: Test .next packaging on PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build_package_test:
+    name: Build & package .next (PR validation)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run postbuild fix (safe)
+        run: |
+          node scripts/fix-next-chunks.mjs || true
+
+      - name: Package .next
+        run: |
+          if [ -d .next ]; then
+            tar -czf .next.tar.gz .next
+            echo "Packaged .next -> .next.tar.gz"
+            echo "Working dir: $(pwd)"
+            ls -la .next.tar.gz || ls -la || true
+            du -sh .next || true
+          else
+            echo ".next directory not found; build may have failed"
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next.tar.gz
