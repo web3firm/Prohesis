@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/offchain/services/dbClient";
+import db from "@/lib/offchain/services/dbClient";
 import { z } from "zod";
 import { jsonError } from '@/lib/api/errorResponse';
 
@@ -17,17 +17,16 @@ export async function GET(req: Request) {
     }
     const userIdRaw = parseResult.data.userId;
 
-    // Try to find by DB id first, otherwise treat as wallet address
-    let user: any = null;
-    if (/^\d+$/.test(userIdRaw)) {
-      user = await prisma.users.findUnique({
-        where: { id: String(userIdRaw) },
-        include: { bets: { include: { market: true } }, payouts: true },
-      });
-    }
+    // Find by id first (id may be a DB id or a wallet-address string),
+    // otherwise fall back to displayName / other identifying fields.
+    let user: any = await db.user.findUnique({
+      where: { id: userIdRaw },
+      include: { bets: { include: { market: true } }, payouts: true },
+    });
+
     if (!user) {
-      // lookup by wallet (seeded test users may be stored by wallet)
-      user = await prisma.users.findFirst({
+      // lookup by displayName or other non-id identifier
+      user = await db.user.findFirst({
         where: { OR: [{ id: userIdRaw }, { displayName: userIdRaw }] },
         include: { bets: { include: { market: true } }, payouts: true },
       });

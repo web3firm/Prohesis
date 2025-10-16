@@ -6,7 +6,7 @@ import { jsonError } from '@/lib/api/errorResponse';
 
 interface Params { params: { id: string } }
 
-const idSchema = z.object({ id: z.string().regex(/^\d+$/) });
+const idSchema = z.object({ id: z.string().min(1) });
 
 // Next.js may provide params either directly or as a Promise; normalize by
 // accepting the context object where params may be a Promise.
@@ -19,11 +19,11 @@ export async function GET(_: Request, context: any) {
     if (!parseResult.success) {
       return jsonError('Invalid id', 400, parseResult.error.issues);
     }
-    const id = Number(parseResult.data.id);
-    let market = await db.market.findUnique({
-      where: { id },
-      include: { bets: true, payouts: true },
-    });
+    const rawId = parseResult.data.id;
+    const id = /^\d+$/.test(rawId) ? Number(rawId) : null;
+    let market = id
+      ? await db.market.findUnique({ where: { id }, include: { bets: true, payouts: true } })
+      : await db.market.findFirst({ where: { onchainAddr: rawId }, include: { bets: true, payouts: true } });
 
   if (!market) return jsonError('Market not found', 404);
 
