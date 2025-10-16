@@ -1,7 +1,7 @@
 // File: src/app/user/Markets/[id]/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther, parseEther } from "viem";
@@ -18,6 +18,15 @@ export default function MarketDetailPage() {
   const [outcomes, setOutcomes] = useState<string[]>([]);
   const [pools, setPools] = useState<number[]>([]);
   const [fetchError, setFetchError] = useState<any>(null);
+  const [isEligibleToClaim, setIsEligibleToClaim] = useState<boolean | null>(null);
+  const [toasts, setToasts] = useState<{ id: number; text: string; type?: "success" | "error" | "info" }[]>([]);
+  const nextToastId = useRef(1);
+
+  function pushToast(text: string, type: "success" | "error" | "info" = "info") {
+    const id = nextToastId.current++;
+    setToasts((t) => [...t, { id, text, type }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 6000);
+  }
   const odds = useMemo(() => getImpliedOddsFromPools(pools), [pools]);
 
   const [amount, setAmount] = useState<string>("");
@@ -39,6 +48,14 @@ export default function MarketDetailPage() {
         setOutcomes(o.length ? o : ["Yes", "No"]); // fallback UI
         const p = await getPools(marketId);
         setPools(p);
+        // Check claim eligibility
+        try {
+          const res = await fetch('/api/payouts/validate?marketId=' + marketId + '&user=' + (address ?? ''));
+          const data = await res.json();
+          setIsEligibleToClaim(Boolean(data?.eligible));
+        } catch (e) {
+          setIsEligibleToClaim(null);
+        }
       } catch (e: any) {
         setFetchError(e);
         setOutcomes(["Yes", "No"]);
@@ -47,10 +64,31 @@ export default function MarketDetailPage() {
     })();
   }, [marketId, isConfirmed]);
 
+  // Periodically refresh eligibility (and refresh after claim confirmations)
+  useEffect(() => {
+    let mounted = true;
+    async function refresh() {
+      try {
+        const res = await fetch('/api/payouts/validate?marketId=' + marketId + '&user=' + (address ?? ''));
+        const data = await res.json();
+        if (mounted) setIsEligibleToClaim(Boolean(data?.eligible));
+      } catch (e) {
+        if (mounted) setIsEligibleToClaim(null);
+      }
+    }
+    // initial
+    refresh();
+    const id = setInterval(refresh, 30_000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [marketId, address, isClaimConfirmed]);
+
   async function handleBet() {
     if (!isConnected) return alert("Connect your wallet first");
     const val = Number(amount);
-    if (!val || val <= 0) return alert("Enter a valid amount");
+    if (!val || val <= 0) return pushToast("Enter a valid amount", "error");
 
     // 1) On-chain tx
     writeContract({
@@ -69,6 +107,9 @@ export default function MarketDetailPage() {
       const addr = await resolveMarketAddress(marketId);
       if (!addr) return alert("Market on-chain address not found");
 
+  // Double-check eligibility before sending tx
+  if (isEligibleToClaim === false) return pushToast('You are not eligible to claim for this market', 'error');
+
       // Call claimWinnings from the user's wallet
       writeClaimContract({
         abi: MarketABI as any,
@@ -77,23 +118,23 @@ export default function MarketDetailPage() {
         args: [] as any,
       });
     } catch (e: any) {
-      alert(`Failed to initiate claim: ${e?.message ?? String(e)}`);
+      pushToast(`Failed to initiate claim: ${e?.message ?? String(e)}`, 'error');
     }
   }
 
   // 2) After on-chain confirms, record off-chain
   useEffect(() => {
     (async () => {
-      if (isConfirmed && hash && address) {
+          if (isConfirmed && hash && address) {
         try {
           await recordBet({ txHash: hash, userId: address }); // using wallet as user id in your schema
           // Reload pools to reflect new stake
           const p = await getPools(marketId);
           setPools(p);
           setAmount("");
-          alert("✅ Bet recorded!");
+          pushToast("✅ Bet recorded!", 'success');
         } catch (e: any) {
-          alert(`❌ Failed to record bet: ${e.message}`);
+          pushToast(`❌ Failed to record bet: ${e.message}`, 'error');
         }
       }
 
@@ -116,9 +157,9 @@ export default function MarketDetailPage() {
           // Refresh pools & UI
           const p = await getPools(marketId);
           setPools(p);
-          alert("✅ Claim recorded!");
+          pushToast("✅ Claim recorded!", 'success');
         } catch (e: any) {
-          alert(`❌ Failed to record claim: ${e?.message ?? String(e)}`);
+          pushToast(`❌ Failed to record claim: ${e?.message ?? String(e)}`, 'error');
         }
       }
     })();
@@ -137,7 +178,15 @@ export default function MarketDetailPage() {
           setFetchError(e);
         }
       }} />
-      <h1 className="text-3xl font-bold mb-4 text-center tracking-tight">Market #{marketId}</h1>
+      <div className="flex items-center justify-center gap-3">
+        <h1 className="text-3xl font-bold mb-4 text-center tracking-tight">Market #{marketId}</h1>
+        {isEligibleToClaim === true && (
+          <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-md">Eligible to claim</span>
+        )}
+        {isEligibleToClaim === false && (
+          <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-md">No winnings</span>
+        )}
+      </div>
 
       {/* Outcomes with odds and pools */}
       <div className="mt-6 grid grid-cols-1 gap-4">
@@ -188,10 +237,16 @@ export default function MarketDetailPage() {
 
         <button
           onClick={handleClaim}
-          disabled={isClaimPending || isClaimConfirming}
-          className="mt-3 w-full border border-gray-200 bg-white text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50"
+          disabled={isClaimPending || isClaimConfirming || isEligibleToClaim === false}
+          className={`mt-3 w-full border border-gray-200 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 ${isEligibleToClaim === false ? 'bg-gray-50 text-gray-400' : 'bg-white text-gray-700'}`}
         >
-          {isClaimPending ? "Confirm claim in wallet…" : isClaimConfirming ? "Waiting for claim confirmation…" : "Claim Winnings"}
+          {isClaimPending
+            ? "Confirm claim in wallet…"
+            : isClaimConfirming
+            ? "Waiting for claim confirmation…"
+            : isEligibleToClaim === false
+            ? "No winnings"
+            : "Claim Winnings"}
         </button>
 
         {hash && (
@@ -199,6 +254,15 @@ export default function MarketDetailPage() {
             tx: {hash}
           </p>
         )}
+
+        {/* Toasts */}
+        <div className="fixed bottom-6 right-6 space-y-2 z-50">
+          {toasts.map((t) => (
+            <div key={t.id} className={`px-4 py-2 rounded-lg shadow-md text-sm ${t.type === 'success' ? 'bg-green-50 text-green-800' : t.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-gray-50 text-gray-800'}`}>
+              {t.text}
+            </div>
+          ))}
+        </div>
       </div>
     </main>
   );
