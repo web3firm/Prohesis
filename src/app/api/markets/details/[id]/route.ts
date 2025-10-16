@@ -21,7 +21,7 @@ export async function GET(_: Request, context: any) {
     }
     const rawId = parseResult.data.id;
     const id = /^\d+$/.test(rawId) ? Number(rawId) : null;
-    let market = id
+    const market = id
       ? await db.market.findUnique({ where: { id }, include: { bets: true, payouts: true } })
       : await db.market.findFirst({ where: { onchainAddr: rawId }, include: { bets: true, payouts: true } });
 
