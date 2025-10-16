@@ -1,17 +1,21 @@
-const hre = require("hardhat");
+import hre from 'hardhat';
 
 async function main() {
-  const [deployer] = await hre.ethers.getSigners();
+  // Use any-cast to avoid typing issues during the Next build step.
+  const _hre: any = hre;
+  const ethers = _hre.ethers as any;
+
+  const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with:", deployer.address);
 
   // Deploy implementation
-  const MarketImpl = await hre.ethers.getContractFactory("ProhesisPredictionMarket");
+  const MarketImpl = await ethers.getContractFactory("ProhesisPredictionMarket");
   const marketImpl = await MarketImpl.deploy(deployer.address);
   await marketImpl.deployed();
   console.log("Market Implementation deployed to:", marketImpl.address);
 
   // Deploy factory
-  const MarketFactory = await hre.ethers.getContractFactory("MarketFactory");
+  const MarketFactory = await ethers.getContractFactory("MarketFactory");
   const factory = await MarketFactory.deploy(
     marketImpl.address,
     deployer.address, // feeReceiver
