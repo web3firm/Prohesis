@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useToast } from "@/components/ui/Toaster";
 import Modal from "./Modal";
 import { useWriteContract } from "wagmi";
 import { abi as factoryAbi } from "@/lib/onchain/abis/MarketFactory.json";
@@ -16,10 +17,11 @@ export default function CreateMarketForm({ isOpen, onClose, factoryAddress }: Pr
   const [endDate, setEndDate] = useState("");
   const [creating, setCreating] = useState(false);
   const { writeContractAsync } = useWriteContract();
+  const { addToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title || !endDate) return alert("Please fill in all fields");
+  if (!title || !endDate) return addToast("Please fill in all fields", "error");
 
     try {
       setCreating(true);
@@ -34,11 +36,11 @@ export default function CreateMarketForm({ isOpen, onClose, factoryAddress }: Pr
       });
 
       console.log("tx:", tx);
-      alert("✅ Market created successfully!");
+      addToast("✅ Market created successfully!", "success");
       onClose();
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to create market");
+      addToast("❌ Failed to create market", "error");
     } finally {
       setCreating(false);
     }
