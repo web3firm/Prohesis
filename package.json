@@ -14,7 +14,8 @@
     "deploy": "hardhat run src/scripts/deployFactoryAndMarket.mjs --network sepolia",
     "sync:pools": "node scripts/syncPools.mjs",
     "cron:run": "node scripts/runCron.mjs",
-    "upsert-vercel": "node scripts/upsert-vercel-env.mjs"
+    "upsert-vercel": "node scripts/upsert-vercel-env.mjs",
+  "test:e2e": "mocha tests/e2e/claim.test.mjs --exit"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
@@ -44,7 +45,8 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+  "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+  "mocha": "^10.2.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.0.0",

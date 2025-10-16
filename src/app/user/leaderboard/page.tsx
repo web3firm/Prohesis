@@ -1,20 +1,15 @@
-import prisma from "@/lib/offchain/services/dbClient";
+import db from "@/lib/offchain/services/dbClient";
 
 export const dynamic = "force-dynamic";
 
 async function getLatestLeaderboard() {
-  const latest = await prisma.leaderboards.findFirst({
-    orderBy: { snapshot_date: "desc" },
-    select: { snapshot_date: true },
-  });
+  const latest = await (db as any).leaderboard?.findFirst({ orderBy: { snapshot_date: "desc" }, select: { snapshot_date: true } }) ?? null;
 
   if (!latest?.snapshot_date) return { date: null, rows: [] as any[] };
 
-  const rows = await prisma.leaderboards.findMany({
-    where: { snapshot_date: latest.snapshot_date },
-    orderBy: [{ position: "asc" }],
-    take: 100,
-  });
+  const rows = latest?.snapshot_date
+    ? await (db as any).leaderboard.findMany({ where: { snapshot_date: latest.snapshot_date }, orderBy: [{ position: "asc" }], take: 100 })
+    : [];
 
   return { date: latest.snapshot_date, rows };
 }

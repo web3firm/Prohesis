@@ -26,6 +26,9 @@ model Market {
   id        Int      @id @default(autoincrement())
   title     String
   onchainAddr String? @unique
+  // Resolution fields: used by server-side validation and integration tests
+  status    String?  @default("open")
+  winningOutcome Int?
   totalPool Float    @default(0)
   endTime   DateTime
   createdAt DateTime @default(now())

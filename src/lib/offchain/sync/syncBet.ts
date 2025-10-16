@@ -16,11 +16,16 @@ export async function syncBetToDB(bet: VerifiedBet) {
 
   if (exists) return exists;
 
+  // Try to associate an off-chain user by wallet address (use lowercase normalized form)
+  const wallet = bet.wallet.toLowerCase();
+  const user = await db.user.findUnique({ where: { id: wallet } }).catch(() => null);
+
   return db.bet.create({
     data: {
       marketId: bet.marketId,
       walletChainId: 11155111,
       walletAddress: bet.wallet,
+      userId: user ? user.id : null,
       outcomeIndex: bet.outcomeIndex,
       amount: bet.amountEth,
       txHash: bet.txHash,

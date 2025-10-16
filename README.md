@@ -37,3 +37,37 @@ All routes live under `/api/*` and return JSON.
 - `POST /api/payouts` — add payout record
 - `GET /api/leaderboard` — top users by total_staked
 
+
+## Testing & CI
+
+Local development:
+
+1. Create `.env` from `.env.example` and ensure `DATABASE_URL` points to your dev Postgres.
+2. Generate Prisma client and run migrations:
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name add_market_resolution_fields
+```
+
+3. Start dev server with optional dev API enabled:
+
+```bash
+# Enable dev-only APIs (if needed)
+ENABLE_DEV_API=true npm run dev
+```
+
+E2E / Integration tests:
+
+Run the mocha E2E test locally (dev server must be running):
+
+```bash
+BASE_URL=http://localhost:3000 TEST_USER=0x0000000000000000000000000000000000000001 npm run test:e2e
+```
+
+CI notes:
+
+- The GitHub Actions workflow `migrate-and-deploy.yml` contains optional jobs `integration_smoke` and `e2e_test`. To enable them, set the `DATABASE_URL` secret in your repository and the jobs will run after migrations.
+- `integration_smoke` runs `scripts/integration-smoke.mjs` to prepare DB state from on-chain factory data (if available).
+- `e2e_test` runs the mocha E2E test which uses Prisma to set up a payout and validates the `/api/payouts/validate` behavior.
+

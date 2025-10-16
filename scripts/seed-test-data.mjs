@@ -18,19 +18,20 @@ async function main() {
     console.log('Seeding test users, bets, and payouts...');
   }
 
-  const user1Id = 'test_user_1';
-  const user2Id = 'test_user_2';
+  // Use canonical wallet-like addresses as user ids for consistency
+  const user1Id = '0x0000000000000000000000000000000000000001';
+  const user2Id = '0x0000000000000000000000000000000000000002';
 
   await prisma.user.upsert({
     where: { id: user1Id },
     update: { displayName: 'Test User 1' },
-    create: { id: user1Id, displayName: 'Test User 1', email: 'test1@example.com' },
+    create: { id: user1Id, displayName: 'Test User 1', email: `${user1Id}@seed.local` },
   });
 
   await prisma.user.upsert({
     where: { id: user2Id },
     update: { displayName: 'Test User 2' },
-    create: { id: user2Id, displayName: 'Test User 2', email: 'test2@example.com' },
+    create: { id: user2Id, displayName: 'Test User 2', email: `${user2Id}@seed.local` },
   });
 
   const markets = await prisma.market.findMany({ take: 3, orderBy: { id: 'asc' } });
@@ -113,7 +114,7 @@ async function main() {
 
   if (doDelete) {
     // Optionally remove test users
-    await prisma.user.deleteMany({ where: { id: { in: [user1Id, user2Id] } } });
+  await prisma.user.deleteMany({ where: { id: { in: [user1Id, user2Id] } } });
     console.log('Deleted test users');
   }
 

@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/offchain/services/dbClient";
+import db from "@/lib/offchain/services/dbClient";
 import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
     // Use schema relation names: bets, payouts
-    const users = await prisma.users.findMany({
-      include: {
-        bets: true,
-        payouts: true,
-      },
-    });
+    const users = await db.user.findMany({ include: { bets: true, payouts: true } });
 
 
     type LeaderboardUser = {
@@ -40,13 +35,14 @@ export async function GET() {
     const snapshotDate = new Date();
     // If a leaderboard model/table exists, persist snapshot. Be defensive
     // and avoid calling an undefined create method on the runtime alias.
-    if (prisma.leaderboards && typeof prisma.leaderboards.create === "function") {
+    // If a leaderboard model exists in Prisma schema, persist snapshot defensively
+    if ((db as any).leaderboard && typeof (db as any).leaderboard.create === "function") {
       try {
         for (let i = 0; i < leaderboardData.length; i++) {
           const u = leaderboardData[i];
             try {
-              // call via optional chaining on the leaderboards object itself
-              await prisma.leaderboards?.create({
+              // call via optional chaining on the leaderboard model if present
+              await (db as any).leaderboard?.create({
                 data: {
                   snapshot_date: snapshotDate,
                   position: i + 1,

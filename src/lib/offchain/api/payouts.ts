@@ -6,10 +6,12 @@ export async function recordPayout(input: {
   amount: number;
   txHash: string;
 }) {
+  // Standardize: use the wallet address itself as the off-chain User.id
+  const walletId = input.userWallet.toLowerCase();
   const user = await db.user.upsert({
-    where: { wallet: input.userWallet.toLowerCase() },
+    where: { id: walletId },
     update: {},
-    create: { wallet: input.userWallet.toLowerCase() },
+    create: { id: walletId, displayName: walletId },
   });
 
   const market = await db.market.findUnique({ where: { onchainAddr: input.onchainAddr } });
