@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { motion } from "framer-motion";
+import { useToast } from "@/components/ui/Toaster";
 
 type Profile = {
   displayName?: string | null;
@@ -14,6 +15,7 @@ type Profile = {
 
 export default function ProfilePage() {
   const { address } = useAccount();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile>({});
@@ -44,7 +46,7 @@ export default function ProfilePage() {
       body: JSON.stringify({ wallet: address, ...profile }),
     });
     setSaving(false);
-    alert("Profile saved!");
+    addToast("Profile saved!", "success");
   };
 
   return (

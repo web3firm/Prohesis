@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
+import { useToast } from '@/components/ui/Toaster';
 import { useParams } from "next/navigation";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther, parseEther } from "viem";
@@ -19,14 +20,7 @@ export default function MarketDetailPage() {
   const [pools, setPools] = useState<number[]>([]);
   const [fetchError, setFetchError] = useState<any>(null);
   const [isEligibleToClaim, setIsEligibleToClaim] = useState<boolean | null>(null);
-  const [toasts, setToasts] = useState<{ id: number; text: string; type?: "success" | "error" | "info" }[]>([]);
-  const nextToastId = useRef(1);
-
-  function pushToast(text: string, type: "success" | "error" | "info" = "info") {
-    const id = nextToastId.current++;
-    setToasts((t) => [...t, { id, text, type }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 6000);
-  }
+  const { addToast } = useToast();
   const odds = useMemo(() => getImpliedOddsFromPools(pools), [pools]);
 
   const [amount, setAmount] = useState<string>("");
@@ -86,9 +80,9 @@ export default function MarketDetailPage() {
   }, [marketId, address, isClaimConfirmed]);
 
   async function handleBet() {
-    if (!isConnected) return alert("Connect your wallet first");
+  if (!isConnected) return addToast("Connect your wallet first", 'error');
     const val = Number(amount);
-    if (!val || val <= 0) return pushToast("Enter a valid amount", "error");
+  if (!val || val <= 0) return addToast("Enter a valid amount", "error");
 
     // 1) On-chain tx
     writeContract({
@@ -101,14 +95,14 @@ export default function MarketDetailPage() {
   }
 
   async function handleClaim() {
-    if (!isConnected) return alert("Connect your wallet first");
+  if (!isConnected) return addToast("Connect your wallet first", 'error');
 
     try {
       const addr = await resolveMarketAddress(marketId);
-      if (!addr) return alert("Market on-chain address not found");
+  if (!addr) return addToast("Market on-chain address not found", 'error');
 
   // Double-check eligibility before sending tx
-  if (isEligibleToClaim === false) return pushToast('You are not eligible to claim for this market', 'error');
+  if (isEligibleToClaim === false) return addToast('You are not eligible to claim for this market', 'error');
 
       // Call claimWinnings from the user's wallet
       writeClaimContract({
@@ -118,7 +112,7 @@ export default function MarketDetailPage() {
         args: [] as any,
       });
     } catch (e: any) {
-      pushToast(`Failed to initiate claim: ${e?.message ?? String(e)}`, 'error');
+      addToast(`Failed to initiate claim: ${e?.message ?? String(e)}`, 'error');
     }
   }
 
@@ -132,9 +126,9 @@ export default function MarketDetailPage() {
           const p = await getPools(marketId);
           setPools(p);
           setAmount("");
-          pushToast("✅ Bet recorded!", 'success');
+          addToast("✅ Bet recorded!", 'success');
         } catch (e: any) {
-          pushToast(`❌ Failed to record bet: ${e.message}`, 'error');
+          addToast(`❌ Failed to record bet: ${e.message}`, 'error');
         }
       }
 
@@ -157,9 +151,9 @@ export default function MarketDetailPage() {
           // Refresh pools & UI
           const p = await getPools(marketId);
           setPools(p);
-          pushToast("✅ Claim recorded!", 'success');
+          addToast("✅ Claim recorded!", 'success');
         } catch (e: any) {
-          pushToast(`❌ Failed to record claim: ${e?.message ?? String(e)}`, 'error');
+          addToast(`❌ Failed to record claim: ${e?.message ?? String(e)}`, 'error');
         }
       }
     })();
@@ -255,14 +249,7 @@ export default function MarketDetailPage() {
           </p>
         )}
 
-        {/* Toasts */}
-        <div className="fixed bottom-6 right-6 space-y-2 z-50">
-          {toasts.map((t) => (
-            <div key={t.id} className={`px-4 py-2 rounded-lg shadow-md text-sm ${t.type === 'success' ? 'bg-green-50 text-green-800' : t.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-gray-50 text-gray-800'}`}>
-              {t.text}
-            </div>
-          ))}
-        </div>
+        {/* Toasts are rendered by global ToasterProvider */}
       </div>
     </main>
   );
