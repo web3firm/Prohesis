@@ -8,4 +8,5 @@ nohup: ignoring input
    - Network:      http://72.60.234.134:3000
 
  ✓ Starting...
- ✓ Ready in 647ms
+ ✓ Ready in 601ms
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }

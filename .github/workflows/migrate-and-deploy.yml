@@ -32,7 +32,6 @@ jobs:
       - name: Run postbuild fix (safe)
         run: |
           # attempt the robust fix script in case packaging is needed
-          node scripts/fix-next-chunks.mjs || true
 
       - name: Package .next (preserve symlinks)
         run: |
@@ -66,6 +65,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
+
         run: |
           if [ -f package-lock.json ]; then
             npm ci
