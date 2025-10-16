@@ -14,7 +14,7 @@ export default function MarketsPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/markets/list");
+  const res = await fetch("/api/markets/list");
         if (!res.ok) {
           throw new Error(`API error: ${res.status}`);
         }
@@ -22,7 +22,23 @@ export default function MarketsPage() {
         if (!Array.isArray(data)) {
           throw new Error("Malformed API response");
         }
-        setMarkets(data);
+        // If DB returned nothing, fallback to reading directly from the factory
+        if (data.length === 0) {
+          try {
+            const res2 = await fetch("/api/markets/from-factory");
+            if (res2.ok) {
+              const fromFactory = await res2.json();
+              // Annotate source so UI can show where it came from
+              setMarkets(fromFactory.map((m: any) => ({ ...m, _source: 'factory' })));
+            } else {
+              setMarkets([]);
+            }
+          } catch (e) {
+            setMarkets([]);
+          }
+        } else {
+          setMarkets(data.map((m: any) => ({ ...m, _source: 'db' })));
+        }
       } catch (e: any) {
         setError(e.message || "Failed to load markets");
         setMarkets([]);
@@ -47,7 +63,7 @@ export default function MarketsPage() {
           <div className="col-span-full text-center text-gray-500 py-12">No markets found.</div>
         ) : (
           markets.map((market) => (
-            <MarketCard key={market.id} market={market} />
+            <MarketCard key={market.id ?? market.address} market={market} />
           ))
         )}
       </div>

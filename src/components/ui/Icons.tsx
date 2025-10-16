@@ -18,4 +18,5 @@ export const Exclamation = ({ className = 'w-4 h-4' }: { className?: string }) =
   </svg>
 );
 
-export default {};
+export const Icons = {} as const;
+export default Icons;

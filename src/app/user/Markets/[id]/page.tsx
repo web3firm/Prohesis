@@ -1,11 +1,11 @@
 // File: src/app/user/Markets/[id]/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useToast } from '@/components/ui/Toaster';
 import { useParams } from "next/navigation";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { formatEther, parseEther } from "viem";
+import { parseEther } from "viem";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import { getImpliedOddsFromPools, getOutcomes, getPools, CONTRACT_ADDRESS, resolveMarketAddress } from "@/lib/onchain/readFunctions";
 import { recordBet } from "@/lib/offchain/api/bets";
