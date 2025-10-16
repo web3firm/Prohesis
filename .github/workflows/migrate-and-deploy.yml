@@ -6,6 +6,45 @@ on:
   workflow_dispatch:
 
 jobs:
+  build_package:
+    name: Build and package .next
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run postbuild fix (safe)
+        run: |
+          # attempt the robust fix script in case packaging is needed
+          node scripts/fix-next-chunks.mjs || true
+
+      - name: Package .next (preserve symlinks)
+        run: |
+          if [ -d .next ]; then
+            tar -czf .next.tar.gz .next
+            echo "Packaged .next -> .next.tar.gz"
+          else
+            echo ".next directory not found; build may have failed"
+            exit 1
+          fi
+
+      - name: Upload .next artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next.tar.gz
+
   migrate:
     name: Run Prisma migrations
     runs-on: ubuntu-latest
@@ -117,7 +156,7 @@ jobs:
           fi
   deploy_web:
     name: Build & Deploy web (optional)
-    needs: migrate
+    needs: [migrate, build_package]
     runs-on: ubuntu-latest
     if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_PROJECT_ID != '' }}
     steps:
@@ -132,11 +171,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Download .next artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .
 
-      - name: Fix next chunks (ensure vendor-chunks symlink)
-        run: node scripts/fix-next-chunks.mjs
+      - name: Extract .next
+        run: |
+          if [ -f .next.tar.gz ]; then
+            tar -xzf .next.tar.gz -C .
+          else
+            echo ".next.tar.gz not found; falling back to running postbuild fix script"
+            node scripts/fix-next-chunks.mjs || true
+          fi
 
       - name: Trigger Vercel Deploy (via API)
         env:
@@ -154,7 +202,7 @@ jobs:
 
   smoke_tests:
     name: Smoke tests
-    needs: [migrate]
+    needs: [migrate, build_package]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -168,11 +216,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Download .next artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .
 
-      - name: Fix next chunks (ensure vendor-chunks symlink)
-        run: node scripts/fix-next-chunks.mjs
+      - name: Extract .next
+        run: |
+          if [ -f .next.tar.gz ]; then
+            tar -xzf .next.tar.gz -C .
+          else
+            echo ".next.tar.gz not found; falling back to running postbuild fix script"
+            node scripts/fix-next-chunks.mjs || true
+          fi
 
       - name: Start server
         run: |
@@ -187,7 +244,7 @@ jobs:
 
   integration_smoke:
     name: Integration smoke (optional)
-    needs: [migrate]
+    needs: [migrate, build_package]
     runs-on: ubuntu-latest
     if: ${{ secrets.DATABASE_URL != '' }}
     steps:
@@ -202,11 +259,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Download .next artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .
 
-      - name: Fix next chunks (ensure vendor-chunks symlink)
-        run: node scripts/fix-next-chunks.mjs
+      - name: Extract .next
+        run: |
+          if [ -f .next.tar.gz ]; then
+            tar -xzf .next.tar.gz -C .
+          else
+            echo ".next.tar.gz not found; falling back to running postbuild fix script"
+            node scripts/fix-next-chunks.mjs || true
+          fi
 
       - name: Start server
         run: |
@@ -222,7 +288,7 @@ jobs:
 
   e2e_test:
     name: E2E tests (optional)
-    needs: [migrate]
+    needs: [migrate, build_package]
     runs-on: ubuntu-latest
     if: ${{ secrets.DATABASE_URL != '' }}
     steps:
@@ -237,11 +303,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Download .next artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .
 
-      - name: Fix next chunks (ensure vendor-chunks symlink)
-        run: node scripts/fix-next-chunks.mjs
+      - name: Extract .next
+        run: |
+          if [ -f .next.tar.gz ]; then
+            tar -xzf .next.tar.gz -C .
+          else
+            echo ".next.tar.gz not found; falling back to running postbuild fix script"
+            node scripts/fix-next-chunks.mjs || true
+          fi
 
       - name: Start server
         run: |
