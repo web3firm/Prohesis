@@ -12,6 +12,7 @@ type MarketSummary = {
   noPool: number;
   status?: "open" | "resolved" | "cancelled";
   syncedOnchain?: boolean;
+  _source?: 'db' | 'factory' | string;
 };
 
 interface MarketCardProps {
@@ -33,6 +34,9 @@ export function MarketCard({ market, href }: MarketCardProps) {
     <div className="card p-4 md:p-6 flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg transition-all">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
+          {market._source && (
+            <div className="text-[10px] text-gray-500 mb-1">source: {market._source}</div>
+          )}
           <h3 className="font-semibold text-gray-900 line-clamp-2 text-sm md:text-base">
             {market.title}
           </h3>
