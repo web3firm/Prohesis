@@ -61,3 +61,11 @@ model Payout {
   market   Market @relation(fields: [marketId], references: [id])
   user     User   @relation(fields: [userId], references: [id])
 }
+
+model Audit {
+  id        Int      @id @default(autoincrement())
+  action    String
+  actor     String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
