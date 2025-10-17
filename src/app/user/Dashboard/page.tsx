@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import Link from "next/link";
+import { CalendarIcon, AppWindow, User, Mail } from "lucide-react";
+import { useAccount } from "wagmi";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     (async () => {
-      if (!address) return;
+      if (!address) return setLoading(false);
       setLoading(true);
       const res = await fetch(`/api/user/bets?wallet=${address}`);
       const data = await res.json();
@@ -27,65 +28,124 @@ export default function DashboardPage() {
   }, [address]);
 
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+    <div className="space-y-6">
+      {/* What's new */}
+      <h1 className="text-2xl font-semibold text-gray-900">What's new</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <HeroCard title="Employee Happiness Conference 2023" subtitle="Registration is on" />
+        <HeroCard title="New well-being packages" subtitle="" className="md:col-span-2" />
+        <HeroCard title="Bring your dog to the office day is back!" subtitle="" />
+      </div>
 
-      <Section title="Active Bets" loading={loading} empty="No active bets yet.">
-        <Table rows={active} />
-      </Section>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Events */}
+        <Card>
+          <SectionHeader title="Events" />
+          <div className="flex items-center gap-3 text-blue-700 font-medium">
+            <CalendarIcon size={18} /> July 2023
+          </div>
+          <CalendarStub />
+        </Card>
 
-      <Section title="Pending Claims" loading={loading} empty="No pending claims.">
-        <Table rows={pending} />
-      </Section>
+        {/* Applications */}
+        <Card className="md:col-span-1">
+          <SectionHeader title="Applications" />
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "My profile" },
+              { label: "Safe Ag" },
+              { label: "Jira" },
+              { label: "Wall" },
+              { label: "HR Portal" },
+              { label: "Payroll" },
+            ].map((app) => (
+              <div key={app.label} className="flex flex-col items-center gap-2 py-3 rounded-md hover:bg-blue-50 cursor-pointer">
+                <div className="w-10 h-10 rounded-md bg-blue-600 text-white grid place-items-center">
+                  <AppWindow size={18} />
+                </div>
+                <div className="text-xs text-gray-700 text-center">{app.label}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
-      <Section title="Past Bets" loading={loading} empty="No past bets.">
-        <Table rows={past} />
-      </Section>
+        {/* Contacts */}
+        <Card>
+          <SectionHeader title="Contacts" />
+          <div className="space-y-3">
+            {[
+              { name: "Martin Coles", phone: "+000 111 222 333" },
+              { name: "Adrien Wilson", phone: "+000 111 222 333" },
+              { name: "Jane D", phone: "+000 111 222 333" },
+            ].map((c) => (
+              <div key={c.name} className="flex items-center justify-between p-2 rounded-md hover:bg-blue-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 grid place-items-center text-blue-700">
+                    <User size={18} />
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">{c.name}</div>
+                    <div className="text-xs text-gray-500">{c.phone}</div>
+                  </div>
+                </div>
+                <button className="p-2 rounded-md border hover:bg-blue-50" title="Message">
+                  <Mail size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
 
+      {/* Link to markets */}
       <div className="pt-2">
         <Link href="/user/Markets" className="text-blue-600 hover:underline">Browse markets →</Link>
       </div>
-    </main>
+
+      {/* Hidden bet sections still available if needed for future tabs */}
+      <div className="hidden">
+        <pre className="text-xs text-gray-500">Active: {active.length} | Pending: {pending.length} | Past: {past.length}</pre>
+      </div>
+    </div>
   );
 }
 
-function Section({ title, loading, empty, children }: any) {
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <section className={`bg-white border rounded-xl p-4 ${className}`}>{children}</section>;
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return <h2 className="text-lg font-semibold mb-3 text-gray-900">{title}</h2>;
+}
+
+function HeroCard({ title, subtitle = "", className = "" }: { title: string; subtitle?: string; className?: string }) {
   return (
-    <section className="bg-white border rounded-xl p-4">
-      <h2 className="text-lg font-semibold mb-3">{title}</h2>
-      {loading ? <div className="text-gray-500">Loading…</div> : children ?? <div className="text-sm text-gray-500">{empty}</div>}
-    </section>
+    <div className={`relative rounded-xl overflow-hidden min-h-[160px] bg-[url('/hero-pattern.svg')] bg-cover bg-center ${className}`}>
+      <div className="absolute inset-0 bg-gradient-to-tr from-blue-700/90 to-blue-500/70" />
+      <div className="relative p-4 text-white">
+        <div className="text-lg font-semibold max-w-xs">{title}</div>
+        {subtitle && <div className="text-sm opacity-90 mt-1">{subtitle}</div>}
+      </div>
+    </div>
   );
 }
 
-function Table({ rows }: { rows: any[] }) {
-  if (!rows || rows.length === 0) return <div className="text-sm text-gray-500">Nothing here</div>;
+function CalendarStub() {
+  // Minimal static calendar grid to match the look
+  const days = ["S","M","T","W","T","F","S"];
+  const cells = Array.from({ length: 35 }, (_, i) => i + 1);
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="text-gray-500">
-          <tr>
-            <th className="text-left py-2">Market</th>
-            <th className="text-left py-2">Amount</th>
-            <th className="text-left py-2">Won</th>
-            <th className="text-left py-2">Lost</th>
-            <th className="text-left py-2">Tx</th>
-            <th className="text-left py-2">End</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={`${r.betId}-${r.marketId}`} className="border-t">
-              <td className="py-2"><Link className="text-blue-600 hover:underline" href={`/user/Markets/${r.marketId}`}>{r.marketTitle}</Link></td>
-              <td className="py-2">{r.amount}</td>
-              <td className="py-2">{r.resolved && r.winningOutcome === r.outcomeIndex ? r.paidAmount : 0}</td>
-              <td className="py-2">{r.resolved && r.winningOutcome !== r.outcomeIndex ? r.amount : 0}</td>
-              <td className="py-2 font-mono">{r.txHash?.slice(0,8)}…{r.txHash?.slice(-6)}</td>
-              <td className="py-2">{r.endTime ? new Date(r.endTime).toLocaleString() : '-'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="mt-3">
+      <div className="grid grid-cols-7 text-center text-xs text-gray-500">
+        {days.map((d) => (
+          <div key={d} className="py-1">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {cells.map((n) => (
+          <div key={n} className={`py-2 text-xs rounded-md ${n === 12 ? "bg-blue-600 text-white" : "hover:bg-blue-50 text-gray-700"}`}>{n}</div>
+        ))}
+      </div>
     </div>
   );
 }
