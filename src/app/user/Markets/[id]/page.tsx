@@ -56,7 +56,7 @@ export default function MarketDetailPage() {
         setPools([0, 0]);
       }
     })();
-  }, [marketId, isConfirmed]);
+  }, [marketId, isConfirmed, address]);
 
   // Periodically refresh eligibility (and refresh after claim confirmations)
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function MarketDetailPage() {
         }
       }
     })();
-  }, [isConfirmed, hash, address, marketId]);
+  }, [isConfirmed, hash, address, marketId, isClaimConfirmed, claimHash, addToast]);
 
   return (
     <main className="max-w-3xl mx-auto p-6">

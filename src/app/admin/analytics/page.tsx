@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAnalytics } from "@/lib/offchain/services/analyticsService";
 import {ChartCard} from "@/components/shared/ChartCard";
 
 export default function AdminAnalyticsPage() {
