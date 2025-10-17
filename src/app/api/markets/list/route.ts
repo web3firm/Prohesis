@@ -14,6 +14,8 @@ export async function GET() {
         endTime: true,
         totalPool: true,
         onchainAddr: true,
+        status: true,
+        winningOutcome: true,
       },
     });
 
@@ -32,12 +34,12 @@ export async function GET() {
             update: { totalPool },
             create: { title, endTime: new Date(Date.now() + 86400000), onchainAddr: addr, totalPool },
           });
-        } catch (e) {
-          continue;
-        }
+        } catch {
+            continue;
+          }
       }
 
-      markets = await db.market.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, title: true, endTime: true, totalPool: true } });
+  markets = await db.market.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, title: true, endTime: true, totalPool: true, status: true, winningOutcome: true } });
     }
     // Map markets and, if we have onchainAddr, fetch pools for each to show yes/no pools
     const mapped = await Promise.all(
@@ -49,7 +51,7 @@ export async function GET() {
             const pools = await getPoolsForMarket(m.onchainAddr as `0x${string}`);
             yesPool = pools?.[0] ?? 0;
             noPool = pools?.[1] ?? 0;
-          } catch (e) {
+          } catch {
             // ignore and fallback to zeros
           }
         }
@@ -57,6 +59,8 @@ export async function GET() {
           id: String(m.id),
           title: m.title ?? "Untitled",
           endTime: m.endTime ? new Date(m.endTime).getTime() : 0,
+          status: m.status ?? undefined,
+          winningOutcome: m.winningOutcome ?? undefined,
           yesPool,
           noPool,
         };

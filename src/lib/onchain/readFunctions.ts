@@ -1,11 +1,11 @@
 // File: src/lib/onchain/readFunctions.ts
-import { createPublicClient, getContract, http } from "viem";
+import { getContract } from "viem";
 import { sepolia } from "viem/chains";
-import MarketJSON from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import { ABIS, FACTORY, client as publicClient } from "@/lib/onchain/contract";
 import { CONTRACT_ADDRESS } from "@/lib/utils/constants";
 
 const CHAIN = sepolia;
+void CHAIN;
 
 // Factory contract helper
 export function getFactoryContract() {
@@ -38,7 +38,7 @@ export async function listFactoryMarkets(): Promise<`0x${string}`[]> {
         return [];
       }
     }
-  } catch (e) {
+  } catch {
     return [];
   }
 }

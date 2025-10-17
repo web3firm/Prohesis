@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { MarketCard } from "@/components/ui/MarketCard";
+// MarketCard import not used in this server page; client component handles list rendering
 import MarketListClient from '@/components/Markets/MarketListClient';
 import db from "@/lib/offchain/services/dbClient";
 

@@ -19,7 +19,8 @@ export async function POST(req: Request) {
       return jsonError('Invalid input', 400, parseResult.error.issues);
     }
 
-    const { txHash, onchainAddr, userId } = parseResult.data;
+  const { txHash, onchainAddr, userId } = parseResult.data;
+  void userId; // sometimes we use wallet as user id; keep value to avoid linter complaining
 
     const decoded = await verifyClaimTx(txHash as `0x${string}`);
 

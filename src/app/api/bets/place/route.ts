@@ -38,9 +38,9 @@ export async function POST(req: Request) {
     const decoded = await verifyBetTx(txHash as `0x${string}`);
     const { marketId, outcomeIndex, amountEth } = decoded;
 
-    // Get the outcome label from chain (if available)
-    const outcomes = await getOutcomes(marketId);
-    const outcomeLabel = outcomes?.[outcomeIndex] ?? `Outcome #${outcomeIndex + 1}`;
+  // Get the outcome label from chain (if available)
+  const outcomes = await getOutcomes(marketId);
+  void outcomes; // intentionally unused here but keep call for side-effects/future use
 
     // Ensure user exists (optional upsert)
   const user = await db.user.findUnique({ where: { id: userId } });
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, bet, decoded }, { status: 200 });
-  } catch (error: any) {
+      } catch (error: any) {
     console.error("Place bet error:", error);
     return jsonError(error?.message ?? 'Internal server error', 500);
   }

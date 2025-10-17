@@ -1,21 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 /**
  * @title ProhesisPredictionMarket
  * @notice Handles an individual market where users can bet YES or NO using ETH.
  * Creator can resolve it once the end time passes, and winners can claim their payouts.
  */
 
-contract ProhesisPredictionMarket {
+contract ProhesisPredictionMarket is ReentrancyGuard {
     // ============ State Variables ============
     address public creator;
+    address public feeRecipient; // protocol fee recipient
+    uint16 public feeBps; // e.g., 100 = 1%
     string public title;
     uint256 public endTime;
 
     uint256 public totalYesPool;
     uint256 public totalNoPool;
     bool public resolved;
+    bool public canceled; // allow creator to cancel before end
     uint8 public winningOutcome; // 1 = YES, 0 = NO
     bool public initialized;
 
@@ -26,7 +31,8 @@ contract ProhesisPredictionMarket {
     // ============ Events ============
     event BetPlaced(address indexed user, bool choice, uint256 amount);
     event MarketResolved(uint8 outcome);
-    event WinningsClaimed(address indexed user, uint256 amount);
+    event WinningsClaimed(address indexed user, uint256 amount, uint256 fee);
+    event MarketCanceled();
 
     // ============ Modifiers ============
     modifier onlyCreator() {
@@ -54,7 +60,7 @@ contract ProhesisPredictionMarket {
     // initialize now accepts an explicit creator address so the factory can set
     // the true human/owner as creator (previously the factory contract became
     // the creator which prevented creators from calling onlyCreator functions).
-    function initialize(string memory _title, uint256 _endTime, address _creator)
+    function initialize(string memory _title, uint256 _endTime, address _creator, address _feeRecipient, uint16 _feeBps)
         external
         onlyUninitialized
     {
@@ -62,6 +68,8 @@ contract ProhesisPredictionMarket {
         title = _title;
         endTime = _endTime;
         creator = _creator;
+        feeRecipient = _feeRecipient;
+        feeBps = _feeBps;
         initialized = true;
     }
 
@@ -104,6 +112,7 @@ contract ProhesisPredictionMarket {
         marketEnded
     {
         require(!resolved, "Already resolved");
+        require(!canceled, "Market canceled");
         require(_winningOutcome == 0 || _winningOutcome == 1, "Invalid outcome");
 
         resolved = true;
@@ -113,7 +122,7 @@ contract ProhesisPredictionMarket {
     }
 
     // ============ Claim Winnings ============
-    function claimWinnings() external {
+    function claimWinnings() external nonReentrant {
         require(resolved, "Not resolved yet");
         require(!hasClaimed[msg.sender], "Already claimed");
 
@@ -127,11 +136,48 @@ contract ProhesisPredictionMarket {
 
         require(payout > 0, "Not eligible");
 
+        // protocol fee
+        uint256 fee = (payout * feeBps) / 10_000;
+        uint256 sendAmount = payout - fee;
+
         hasClaimed[msg.sender] = true;
-        (bool success, ) = payable(msg.sender).call{value: payout}("");
+        if (fee > 0 && feeRecipient != address(0)) {
+            (bool fs, ) = payable(feeRecipient).call{value: fee}("");
+            require(fs, "Fee transfer failed");
+        }
+        (bool success, ) = payable(msg.sender).call{value: sendAmount}("");
         require(success, "Transfer failed");
 
-        emit WinningsClaimed(msg.sender, payout);
+        emit WinningsClaimed(msg.sender, sendAmount, fee);
+    }
+
+    // Cancel market before end time; refunds both pools proportionally via manual claim path
+    function cancel() external onlyCreator {
+        require(!resolved, "Resolved");
+        require(!canceled, "Canceled");
+        require(block.timestamp < endTime, "Already ended");
+        canceled = true;
+        emit MarketCanceled();
+    }
+
+    // View helper: amount a user can claim now (post-resolution or cancel)
+    function claimable(address user) external view returns (uint256) {
+        if (hasClaimed[user]) return 0;
+        if (canceled) {
+            // full refund
+            return yesBets[user] + noBets[user];
+        }
+        if (!resolved) return 0;
+        if (winningOutcome == 1 && yesBets[user] > 0) {
+            uint256 payout = (yesBets[user] * getTotalPool()) / totalYesPool;
+            uint256 fee = (payout * feeBps) / 10_000;
+            return payout - fee;
+        } else if (winningOutcome == 0 && noBets[user] > 0) {
+            uint256 payout = (noBets[user] * getTotalPool()) / totalNoPool;
+            uint256 fee = (payout * feeBps) / 10_000;
+            return payout - fee;
+        }
+        return 0;
     }
 
     // ============ Fallback ============

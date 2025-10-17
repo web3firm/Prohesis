@@ -1,7 +1,7 @@
+export const dynamic = "force-dynamic";
 import { PrismaClient } from "@prisma/client";
 import React from "react";
-import getServerSession from "next-auth";
-import { authOptions } from "@/lib/auth/options";
+import { getToken } from "next-auth/jwt";
 
 const prisma = new PrismaClient();
 
@@ -13,11 +13,10 @@ type AuditRow = {
   createdAt: string | Date;
 };
 
-export default async function AuditsPage() {
-  // server-side auth guard: require session user email to match ADMIN_USER
-  const session = (await getServerSession(authOptions as any)) as any;
-  const adminEmail = process.env.ADMIN_USER;
-  if (!session || !session.user || (adminEmail && session.user.email !== adminEmail)) {
+export default async function AuditsPage(req: any) {
+  // server-side auth guard: require admin claim on token
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  if (!(token as any)?.isAdmin) {
     return (
       <div className="p-6">
         <h1 className="text-2xl font-semibold mb-4">Audit Log</h1>
@@ -30,8 +29,9 @@ export default async function AuditsPage() {
   await prisma.$disconnect();
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Audit Log</h1>
+    <div className="p-6 space-y-3">
+      <h1 className="text-2xl font-semibold">Audit Log</h1>
+      <p className="text-sm text-gray-600">Why audits? They help trace backend actions like factory syncs, resolutions, payout validations, and settings changes — invaluable for debugging and compliance.</p>
       <div className="overflow-auto bg-white rounded shadow">
         <table className="w-full table-fixed">
           <thead className="bg-gray-50">
@@ -48,7 +48,7 @@ export default async function AuditsPage() {
                 <td className="p-2 align-top">{new Date(a.createdAt).toLocaleString()}</td>
                 <td className="p-2 align-top">{a.action}</td>
                 <td className="p-2 align-top">{a.actor ?? '-'}</td>
-                <td className="p-2 align-top monospace text-sm break-words max-w-xl">{JSON.stringify(a.metadata)}</td>
+                <td className="p-2 align-top font-mono text-xs break-words max-w-xl">{JSON.stringify(a.metadata, null, 2)}</td>
               </tr>
             ))}
           </tbody>

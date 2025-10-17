@@ -5,14 +5,11 @@ import { useToast } from "@/components/ui/Toaster";
 import Modal from "./Modal";
 import { useWriteContract } from "wagmi";
 import { abi as factoryAbi } from "@/lib/onchain/abis/MarketFactory.json";
+import { getFactoryAddress } from "@/lib/config/env";
 
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  factoryAddress: `0x${string}`;
-}
+interface Props { isOpen: boolean; onClose: () => void; }
 
-export default function CreateMarketForm({ isOpen, onClose, factoryAddress }: Props) {
+export default function CreateMarketForm({ isOpen, onClose }: Props) {
   const [title, setTitle] = useState("");
   const [endDate, setEndDate] = useState("");
   const [creating, setCreating] = useState(false);
@@ -27,8 +24,11 @@ export default function CreateMarketForm({ isOpen, onClose, factoryAddress }: Pr
       setCreating(true);
       const endTimestamp = Math.floor(new Date(endDate).getTime() / 1000);
 
+      const factoryAddress = getFactoryAddress();
+      if (!factoryAddress) throw new Error("Factory address not configured");
+
       const tx = await writeContractAsync({
-        address: factoryAddress,
+  address: factoryAddress,
         abi: factoryAbi,
         functionName: "createMarket",
         args: [title, BigInt(endTimestamp)],

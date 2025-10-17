@@ -11,7 +11,7 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      sepolia: process.env.ETHERSCAN_API_KEY, // ✅ this is the missing piece
+      sepolia: process.env.ETHERSCAN_API_KEY,
     },
   },
 };

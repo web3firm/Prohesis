@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/offchain/services/dbClient";
-import { getOutcomesForMarket, getPoolsForMarket } from "@/lib/onchain/readFunctions";
+import { getPoolsForMarket } from "@/lib/onchain/readFunctions";
 import { z } from "zod";
 import { jsonError } from '@/lib/api/errorResponse';
-
-interface Params { params: { id: string } }
 
 const idSchema = z.object({ id: z.string().min(1) });
 

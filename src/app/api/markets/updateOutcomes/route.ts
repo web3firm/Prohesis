@@ -44,7 +44,7 @@ export async function GET() {
               totalStaked: pools[i],
             },
           });
-        } catch (e) {
+        } catch (_e) {
           // fallback: ignore per-outcome persistence and continue
           continue;
         }

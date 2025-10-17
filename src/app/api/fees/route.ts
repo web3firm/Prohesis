@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
-import { createPublicClient, http, getContract } from "viem";
+import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
-import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import db from "@/lib/offchain/services/dbClient";
 import { CONTRACT_ADDRESS } from "@/lib/utils/constants";
 import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
-    const client = createPublicClient({ chain: sepolia, transport: http() });
-    const contract = getContract({
-      address: CONTRACT_ADDRESS,
-      abi: (MarketABI as any).abi,
-      client,
-    });
+  const client = createPublicClient({ chain: sepolia, transport: http() });
+  void client; // client used only for fetching logs below
 
     const logs = await client.getLogs({
       address: CONTRACT_ADDRESS,

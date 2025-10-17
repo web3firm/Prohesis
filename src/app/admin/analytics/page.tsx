@@ -1,67 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {ChartCard} from "@/components/shared/ChartCard";
+export const dynamic = "force-dynamic";
 
-export default function AdminAnalyticsPage() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+import useSWR from "swr";
+import { ChartCard } from "@/components/shared/ChartCard";
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/analytics");
-        const json = await res.json();
-        if (json.success) setData(json.data);
-      } catch (err) {
-        console.error("Analytics fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-  if (loading) return <div className="p-8 text-gray-600">Loading analytics…</div>;
-  if (!data) return <div className="p-8 text-gray-600">No analytics data.</div>;
+export default function AnalyticsPage() {
+  const { data, error } = useSWR("/api/admin/insights", fetcher);
+
+  if (error) return <div className="p-6 text-red-600">Failed to load analytics</div>;
+  if (!data) return <div className="p-6 text-gray-600">Loading analytics…</div>;
+
+  const a = data.analytics || {};
 
   return (
-    <main className="max-w-7xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-        Platform Analytics
-      </h1>
+    <div className="p-6 max-w-6xl space-y-6">
+      <h1 className="text-2xl font-semibold">Analytics</h1>
 
-      {/* Top metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat label="Markets" value={data.totalMarkets} />
-        <Stat label="Users" value={data.totalUsers} />
-        <Stat label="Bets" value={data.totalBets} />
-        <Stat label="Volume" value={`${Number(data.totalVolume).toFixed(2)} ETH`} />
+        <Stat label="Markets" value={a.totalMarkets ?? 0} />
+        <Stat label="Users" value={a.totalUsers ?? 0} />
+        <Stat label="Bets" value={a.totalBets ?? 0} />
+        <Stat label="Volume" value={(a.totalVolume ?? 0).toFixed(2)} />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ChartCard
-          title="Top 5 Markets"
-          labels={data.topMarkets.map((m: any) => m.title)}
-          data={data.topMarkets.map((m: any) => m.total_pool)}
-          color="#2563eb"
+          title="Top Markets by Pool"
+          labels={(a.topMarkets || []).map((m: any) => m.title)}
+          data={(a.topMarkets || []).map((m: any) => m.totalPool)}
+          color="#7E3AF2"
         />
         <ChartCard
-          title="Top Users (by winnings)"
-          labels={data.topUsers.map((u: any) => u.Users.username)}
-          data={data.topUsers.map((u: any) => u.total_winnings)}
+          title="Recent Users (count)"
+          labels={(data.stats?.recentUsers || []).map((u: any) => u.displayName || u.email || u.id)}
+          data={(data.stats?.recentUsers || []).map(() => 1)}
           color="#10b981"
         />
       </div>
-    </main>
+    </div>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-white rounded-xl border shadow-sm p-4 text-center">
-      <p className="text-2xl font-semibold text-blue-600">{value}</p>
+      <p className="text-2xl font-semibold text-[#7E3AF2]">{value}</p>
       <p className="text-sm text-gray-500">{label}</p>
     </div>
   );

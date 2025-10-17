@@ -2,6 +2,7 @@ import db from "@/lib/offchain/services/dbClient";
 
 export async function getAdminStats() {
   // Aggregate data that actually exists in your schema
+  
   const [totalMarkets, totalBets, totalPayouts, recentUsers] = await Promise.all([
     db.market.count(),
     db.bet.count(),

@@ -1,113 +1,91 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAccount } from "wagmi";
 import Link from "next/link";
-import db from "@/lib/offchain/services/dbClient"
-;
 
 export const dynamic = "force-dynamic";
 
-async function getData() {
-  // `transaction` model isn't present in the Prisma schema; use recent bets
-  // as recent activity instead.
-  const [recentTx, recentMarkets] = await Promise.all([
-    db.bet.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    }),
-    db.market.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    }),
-  ]);
+export default function DashboardPage() {
+  const { address } = useAccount();
+  const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState<any[]>([]);
+  const [pending, setPending] = useState<any[]>([]);
+  const [past, setPast] = useState<any[]>([]);
 
-  return { recentTx, recentMarkets };
-}
-
-export default async function DashboardPage() {
-  const { recentTx, recentMarkets } = await getData();
+  useEffect(() => {
+    (async () => {
+      if (!address) return;
+      setLoading(true);
+      const res = await fetch(`/api/user/bets?wallet=${address}`);
+      const data = await res.json();
+      setActive(data.activeBets || []);
+      setPending(data.pendingClaims || []);
+      setPast(data.pastBets || []);
+      setLoading(false);
+    })();
+  }, [address]);
 
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-10">
-      <header className="flex flex-col md:flex-row items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Your Dashboard</h1>
-        <Link
-          href="/user/Markets"
-          className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 font-semibold shadow"
-        >
-          Browse Markets
-        </Link>
-      </header>
+    <main className="max-w-6xl mx-auto p-6 space-y-8">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
 
-      {/* Recent Markets */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Newest Markets</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recentMarkets.map((m: any) => (
-            <Link
-              key={m.id}
-              href={`/user/Markets/${m.id}`}
-              className="rounded-2xl border-2 border-gray-100 bg-white p-5 shadow hover:shadow-lg hover:border-blue-400 transition-all flex flex-col gap-2"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">{m.title}</h3>
-                <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${m.status === "open" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                  {m.status}
-                </span>
-              </div>
-              <p className="text-gray-600 mt-1 line-clamp-2">{m.question}</p>
-              <div className="text-xs text-gray-500 mt-2">
-                Outcomes: {Array.isArray(m.outcomes) ? m.outcomes.join(" / ") : "—"}
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <Section title="Active Bets" loading={loading} empty="No active bets yet.">
+        <Table rows={active} />
+      </Section>
 
-      {/* Recent Activity */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-        <div className="rounded-2xl border-2 border-gray-100 bg-white overflow-x-auto shadow">
-          <table className="w-full text-sm min-w-[600px]">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-4 py-2">Time</th>
-                <th className="text-left px-4 py-2">Type</th>
-                <th className="text-left px-4 py-2">Status</th>
-                <th className="text-left px-4 py-2">Tx Hash</th>
-                <th className="text-left px-4 py-2">Wallet</th>
-                <th className="text-left px-4 py-2">Block</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentTx.map((t: any) => (
-                <tr key={t.tx_hash} className="border-t hover:bg-blue-50/30 transition">
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    {new Date(t.created_at).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-2 capitalize whitespace-nowrap">{t.tx_type}</td>
-                  <td className="px-4 py-2">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${t.status === "success" ? "bg-green-100 text-green-700" : t.status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
-                      {t.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 font-mono">
-                    {t.tx_hash?.slice(0, 8)}…{t.tx_hash?.slice(-6)}
-                  </td>
-                  <td className="px-4 py-2 font-mono">
-                    {t.wallet_address?.slice(0, 6)}…{t.wallet_address?.slice(-4)}
-                  </td>
-                  <td className="px-4 py-2">{t.block_number ?? "—"}</td>
-                </tr>
-              ))}
-              {recentTx.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
-                    No activity yet. Place a bet or create a market to get started.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <Section title="Pending Claims" loading={loading} empty="No pending claims.">
+        <Table rows={pending} />
+      </Section>
+
+      <Section title="Past Bets" loading={loading} empty="No past bets.">
+        <Table rows={past} />
+      </Section>
+
+      <div className="pt-2">
+        <Link href="/user/Markets" className="text-blue-600 hover:underline">Browse markets →</Link>
+      </div>
     </main>
+  );
+}
+
+function Section({ title, loading, empty, children }: any) {
+  return (
+    <section className="bg-white border rounded-xl p-4">
+      <h2 className="text-lg font-semibold mb-3">{title}</h2>
+      {loading ? <div className="text-gray-500">Loading…</div> : children ?? <div className="text-sm text-gray-500">{empty}</div>}
+    </section>
+  );
+}
+
+function Table({ rows }: { rows: any[] }) {
+  if (!rows || rows.length === 0) return <div className="text-sm text-gray-500">Nothing here</div>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="text-gray-500">
+          <tr>
+            <th className="text-left py-2">Market</th>
+            <th className="text-left py-2">Amount</th>
+            <th className="text-left py-2">Won</th>
+            <th className="text-left py-2">Lost</th>
+            <th className="text-left py-2">Tx</th>
+            <th className="text-left py-2">End</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={`${r.betId}-${r.marketId}`} className="border-t">
+              <td className="py-2"><Link className="text-blue-600 hover:underline" href={`/user/Markets/${r.marketId}`}>{r.marketTitle}</Link></td>
+              <td className="py-2">{r.amount}</td>
+              <td className="py-2">{r.resolved && r.winningOutcome === r.outcomeIndex ? r.paidAmount : 0}</td>
+              <td className="py-2">{r.resolved && r.winningOutcome !== r.outcomeIndex ? r.amount : 0}</td>
+              <td className="py-2 font-mono">{r.txHash?.slice(0,8)}…{r.txHash?.slice(-6)}</td>
+              <td className="py-2">{r.endTime ? new Date(r.endTime).toLocaleString() : '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/offchain/services/dbClient"; // default export is `db` client
 import { getPoolsForMarket } from "@/lib/onchain/readFunctions";
-import { createPublicClient, getContract, http, type Abi } from "viem";
-import { sepolia } from "viem/chains";
-import MarketJSON from "@/lib/onchain/abis/ProhesisPredictionMarket.json"; // ✅ JSON
+// viem client/ABI imports removed (not used in this endpoint)
 // If you already created /src/lib/onchain/abis/index.ts with exports, you can instead:
 // import { MarketABI } from "@/lib/onchain/abis";
 
-const MarketABI = MarketJSON.abi as unknown as Abi; // typed ABI
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MARKET_CONTRACT as `0x${string}` | undefined; // from env
+void CONTRACT_ADDRESS;
 
 export async function GET() {
   try {
@@ -21,7 +19,7 @@ export async function GET() {
     // If you named it `model Markets { ... }`, then keep `prisma.markets`.
     const markets = await db.market.findMany();
 
-    for (const m of markets) {
+  for (const m of markets) {
       // If your schema stores on-chain id differently, adjust here.
       // Example: assuming you have `onchainMarketId: Int` on Market:
       // const pools = await contract.read.getPools([BigInt(m.onchainMarketId)]);
@@ -37,7 +35,7 @@ export async function GET() {
         continue;
       }
 
-      try {
+  try {
         const pools = await getPoolsForMarket(onchainAddr as `0x${string}`);
         const total = (pools || []).reduce((a, b) => a + b, 0);
 
@@ -52,8 +50,8 @@ export async function GET() {
           // Fallback: write to market.totalPool
           await db.market.update({ where: { id: m.id }, data: { totalPool: total } });
         }
-      } catch (e) {
-        console.warn("Failed to fetch pools for", m.id, e);
+      } catch (_e) {
+        console.warn("Failed to fetch pools for", m.id);
         continue;
       }
     }

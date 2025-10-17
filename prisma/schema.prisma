@@ -69,3 +69,18 @@ model Audit {
   metadata  Json?
   createdAt DateTime @default(now())
 }
+
+// Admins table: grants access to admin panel via email and/or wallet address
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String?  @unique
+  wallet    String?  @unique @db.VarChar(64)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Setting {
+  key   String @id
+  value Json
+  updatedAt DateTime @updatedAt
+}

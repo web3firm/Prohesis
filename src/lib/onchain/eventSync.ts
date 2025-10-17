@@ -21,11 +21,7 @@ export async function startEventListener() {
   try {
     console.log("🔄 Starting Prohesis event listener...");
 
-    const contract = getContract({
-      address: CONTRACT_ADDRESS,
-      abi: (MarketABI as any).abi,
-      client: publicClient,
-    });
+    void (MarketABI); // ABI referenced for type hinting; contract created inline with publicClient in watchers
 
     // --------------------------
     // 🧩 MarketCreated
