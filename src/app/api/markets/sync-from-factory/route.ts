@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     for (const addr of addrs) {
       try {
         const { title, endTime, totalPool } = await fetchMarketDetails(addr as `0x${string}`);
-        const res = await prisma.market.upsert({
+        await prisma.market.upsert({
           where: { onchainAddr: addr },
           update: { title, endTime: new Date(endTime * 1000), totalPool },
           create: { title, endTime: new Date(endTime * 1000), onchainAddr: addr, totalPool },
@@ -44,16 +44,16 @@ export async function POST(req: Request) {
       }
     }
 
-    // record audit
+    // record audit using typed Prisma client (migration & generate completed)
     try {
       const actor = process.env.SYNC_TOKEN && req.headers.get('x-sync-token') ? 'sync-token' : 'session';
-      // Use a raw insert to avoid needing a regenerated Prisma client in this repo state
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "Audit" ("action", "actor", "metadata", """createdAt""") VALUES ($1, $2, $3, now())`,
-        'sync-from-factory',
-        actor,
-        JSON.stringify({ count: upserted, sourceCount: addrs.length })
-      );
+      await prisma.audit.create({
+        data: {
+          action: 'sync-from-factory',
+          actor,
+          metadata: { count: upserted, sourceCount: addrs.length },
+        },
+      });
     } catch (e: any) {
       console.warn('Failed to write audit record', e?.message ?? e);
     }
