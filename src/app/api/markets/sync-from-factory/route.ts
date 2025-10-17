@@ -3,6 +3,8 @@ import { listFactoryMarkets } from "@/lib/onchain/readFunctions";
 import { PrismaClient } from "@prisma/client";
 import { getMarketContract } from "@/lib/onchain/readFunctions";
 import { jsonError } from "@/lib/api/errorResponse";
+import getServerSession from "next-auth";
+import { authOptions } from "@/lib/auth/options";
 
 const prisma = new PrismaClient();
 
@@ -17,9 +19,13 @@ async function fetchMarketDetails(addr: `0x${string}`) {
 
 export async function POST(req: Request) {
   try {
+    // Allow either a valid SYNC_TOKEN header or an authenticated admin session
     const token = req.headers.get("x-sync-token");
-    if (!process.env.SYNC_TOKEN || token !== process.env.SYNC_TOKEN) {
-      return jsonError("Unauthorized", 401);
+    if (process.env.SYNC_TOKEN && token === process.env.SYNC_TOKEN) {
+      // allowed
+    } else {
+      const session = await getServerSession(authOptions as any);
+      if (!session) return jsonError("Unauthorized", 401);
     }
 
     const addrs = await listFactoryMarkets();

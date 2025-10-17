@@ -2,11 +2,16 @@
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { ethers } from 'ethers';
-import factoryJson from '../src/lib/onchain/abis/MarketFactory.json';
-import marketJson from '../src/lib/onchain/abis/ProhesisPredictionMarket.json';
 import { PrismaClient } from '@prisma/client';
 
-dotenv.config({ path: new URL('../.env', import.meta.url) });
+// Prefer .env.local for local dev, fallback to .env
+const localEnvPath = new URL('../.env.local', import.meta.url);
+const envPath = fs.existsSync(localEnvPath) ? localEnvPath : new URL('../.env', import.meta.url);
+dotenv.config({ path: envPath });
+
+// Load JSON ABIs using fs to avoid Node import assertion requirements
+const factoryJson = JSON.parse(fs.readFileSync(new URL('../src/lib/onchain/abis/MarketFactory.json', import.meta.url), 'utf8'));
+const marketJson = JSON.parse(fs.readFileSync(new URL('../src/lib/onchain/abis/ProhesisPredictionMarket.json', import.meta.url), 'utf8'));
 const prisma = new PrismaClient();
 const RPC = process.env.SEPOLIA_RPC_URL || process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
 const FACTORY = process.env.NEXT_PUBLIC_FACTORY_CONTRACT;
