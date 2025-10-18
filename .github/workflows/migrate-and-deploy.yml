@@ -91,8 +91,12 @@ jobs:
     name: Deploy contracts (optional)
     needs: migrate
     runs-on: ubuntu-latest
-    # Only run when PRIVATE_KEY is provided in secrets
-    if: ${{ secrets.PRIVATE_KEY != '' && secrets.SEPOLIA_RPC_URL != '' }}
+    env:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+      ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,10 +118,11 @@ jobs:
         run: npm run compile
 
       - name: Deploy contracts (Hardhat)
+        if: ${{ env.PRIVATE_KEY != '' && env.SEPOLIA_RPC_URL != '' }}
         env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
-          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          PRIVATE_KEY: ${{ env.PRIVATE_KEY }}
+          SEPOLIA_RPC_URL: ${{ env.SEPOLIA_RPC_URL }}
+          ETHERSCAN_API_KEY: ${{ env.ETHERSCAN_API_KEY }}
         run: |
           # Run the existing deploy script. It will print the factory + market info.
           npx hardhat run src/scripts/deployFactoryAndMarket.cjs --network sepolia 2>&1 | tee deploy.log
@@ -129,10 +134,10 @@ jobs:
           echo "---- End deploy.log ----";
 
       - name: Update Vercel env with factory address (optional)
-        if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_PROJECT_ID != '' }}
+        if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_PROJECT_ID != '' }}
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
         run: |
           set -euo pipefail
           # Extract factory address from deploy.log (expects line like: "Factory deployed at: 0x...")
@@ -176,7 +181,9 @@ jobs:
     name: Build & Deploy web (optional)
     needs: [migrate, build_package]
     runs-on: ubuntu-latest
-    if: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_PROJECT_ID != '' }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -210,9 +217,10 @@ jobs:
           fi
 
       - name: Trigger Vercel Deploy (via API)
+        if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_PROJECT_ID != '' }}
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ env.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
         run: |
           echo "Triggering Vercel deployment via Vercel API"
           DEPLOY_URL="https://api.vercel.com/v13/now/deployments"
@@ -270,7 +278,8 @@ jobs:
     name: Integration smoke (optional)
     needs: [migrate, build_package]
     runs-on: ubuntu-latest
-    if: ${{ secrets.DATABASE_URL != '' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -304,8 +313,9 @@ jobs:
           sleep 2
 
       - name: Run integration smoke (prepares DB)
+        if: ${{ env.DATABASE_URL != '' }}
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ env.DATABASE_URL }}
           BASE_URL: http://localhost:3000
         run: |
           node scripts/integration-smoke.mjs
@@ -314,7 +324,8 @@ jobs:
     name: E2E tests (optional)
     needs: [migrate, build_package]
     runs-on: ubuntu-latest
-    if: ${{ secrets.DATABASE_URL != '' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -348,8 +359,9 @@ jobs:
           sleep 2
 
       - name: Run e2e test
+        if: ${{ env.DATABASE_URL != '' }}
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ env.DATABASE_URL }}
           BASE_URL: http://localhost:3000
           TEST_USER: 0x0000000000000000000000000000000000000001
         run: |
