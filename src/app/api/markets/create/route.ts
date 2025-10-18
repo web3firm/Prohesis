@@ -32,6 +32,19 @@ export async function POST(req: Request) {
     });
 
     if (!result.success) throw new Error(result.error);
+
+    // Best-effort DB upsert if we have the new address
+    try {
+      if ((result as any).marketAddress) {
+        const db = (await import('@/lib/offchain/services/dbClient')).default;
+        await db.market.upsert({
+          where: { onchainAddr: (result as any).marketAddress },
+          update: { title: question, endTime: new Date(endTime) },
+          create: { title: question, endTime: new Date(endTime), onchainAddr: (result as any).marketAddress, totalPool: 0 },
+        });
+      }
+    } catch {}
+
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error("Create market error:", error);

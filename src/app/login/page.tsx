@@ -6,6 +6,8 @@ import { useAccount, useSignMessage } from "wagmi";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const [msg, setMsg] = useState<string | null>(null);
@@ -16,6 +18,22 @@ export default function LoginPage() {
     try {
       const res = await signIn("email-credentials", { email, password: (window as any).adminInvite || "", redirect: true, callbackUrl: "/admin" });
       if ((res as any)?.error) setMsg((res as any).error);
+    } catch (e: any) {
+      setMsg(e.message);
+    }
+  }
+
+  async function adminLogin(e: any) {
+    e.preventDefault();
+    setMsg(null);
+    try {
+      const res: any = await signIn("credentials", {
+        username,
+        password,
+        redirect: true,
+        callbackUrl: "/admin",
+      });
+      if (res && res.error) setMsg(res.error);
     } catch (e: any) {
       setMsg(e.message);
     }
@@ -64,6 +82,28 @@ export default function LoginPage() {
         <div className="text-center text-sm text-gray-500">or</div>
 
         <button onClick={walletLogin} className="w-full py-2 rounded-md border">Sign in with wallet</button>
+
+        <div className="text-center text-sm text-gray-500">or</div>
+
+        <form onSubmit={adminLogin} className="space-y-3">
+          <label className="text-sm text-gray-600">Username</label>
+          <input
+            type="text"
+            className="w-full border rounded-md px-3 py-2"
+            placeholder="admin"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <label className="text-sm text-gray-600">Password</label>
+          <input
+            type="password"
+            className="w-full border rounded-md px-3 py-2"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button type="submit" className="w-full py-2 rounded-md bg-[#7E3AF2] text-white">Sign in (username/password)</button>
+        </form>
       </div>
     </div>
   );

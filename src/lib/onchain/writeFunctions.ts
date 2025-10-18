@@ -112,7 +112,7 @@ export async function createMarket(input: {
   endTime: number;
   creatorAddress: string;
   userId: string;
-}): Promise<{ success: boolean; txHash?: `0x${string}`; error?: string }> {
+}): Promise<{ success: boolean; txHash?: `0x${string}`; marketAddress?: `0x${string}`; error?: string }> {
   if (!FACTORY) return { success: false, error: "Factory address not configured" };
   try {
     const walletClient = getWalletClient();
@@ -132,8 +132,23 @@ export async function createMarket(input: {
       value: fee,
     } as any);
 
-    await publicClient.waitForTransactionReceipt({ hash: tx });
-    return { success: true, txHash: tx };
+    const receipt = await publicClient.waitForTransactionReceipt({ hash: tx });
+    // Try to decode MarketCreated event to extract new market address
+    let marketAddress: `0x${string}` | undefined = undefined;
+    try {
+      for (const log of receipt.logs) {
+        try {
+          const decoded: any = decodeEventLog({ abi: (ABIS.factory as any).abi ?? ABIS.factory, data: log.data, topics: log.topics } as any);
+          if (decoded && decoded.eventName === 'MarketCreated') {
+            const args: any = decoded.args as any;
+            marketAddress = (args?.market || args?.[0]) as `0x${string}`;
+            break;
+          }
+        } catch {}
+      }
+    } catch {}
+
+    return { success: true, txHash: tx, marketAddress };
   } catch (e: any) {
     return { success: false, error: e?.message ?? String(e) };
   }

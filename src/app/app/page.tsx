@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import Navbar from "@/components/ui/Navbar";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 

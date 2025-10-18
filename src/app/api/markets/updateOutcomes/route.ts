@@ -52,8 +52,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, updated: markets.length });
-  } catch (error: any) {
-    console.error("Outcome sync error:", error);
-    return jsonError(error?.message ?? 'Internal server error', 500);
+  } catch (_error: any) {
+    console.error("Outcome sync error:", _error);
+    return jsonError(_error?.message ?? 'Internal server error', 500);
   }
 }

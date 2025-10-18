@@ -5,8 +5,8 @@ import { getPoolsForMarket } from "@/lib/onchain/readFunctions";
 // If you already created /src/lib/onchain/abis/index.ts with exports, you can instead:
 // import { MarketABI } from "@/lib/onchain/abis";
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MARKET_CONTRACT as `0x${string}` | undefined; // from env
-void CONTRACT_ADDRESS;
+// Intentionally unused: left for reference
+const _CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MARKET_CONTRACT as `0x${string}` | undefined;
 
 export async function GET() {
   try {
