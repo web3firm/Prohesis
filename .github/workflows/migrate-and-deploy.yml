@@ -257,7 +257,8 @@ jobs:
       - name: Start server
         run: |
           nohup npm run start &
-          sleep 2
+          # Give Next.js a bit more time to boot in CI
+          sleep 8
 
       - name: Run smoke tests
         env:
