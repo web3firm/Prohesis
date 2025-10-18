@@ -8,7 +8,7 @@ export default function HomePage() {
       <p className="mb-8 text-gray-400 text-lg">Your Web3 Prediction Market</p>
 
       <Link
-        href="/user"
+        href="/app"
         className="px-6 py-3 bg-blue-600 rounded-xl hover:bg-blue-700 transition"
       >
         Go to User Markets →

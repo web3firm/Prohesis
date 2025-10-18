@@ -4,8 +4,11 @@ import { listFactoryMarkets, getOutcomesForMarket, getPoolsForMarket } from "@/l
 import { jsonError } from '@/lib/api/errorResponse';
 
 // Patch: Return structure expected by MarketCard (id, title, endTime, yesPool, noPool)
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const sort = (searchParams.get('sort') || 'trending') as 'trending' | 'new' | 'ending';
+
     let markets = await db.market.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -16,6 +19,7 @@ export async function GET() {
         onchainAddr: true,
         status: true,
         winningOutcome: true,
+        createdAt: true,
       },
     });
 
@@ -39,7 +43,7 @@ export async function GET() {
           }
       }
 
-  markets = await db.market.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, title: true, endTime: true, totalPool: true, status: true, winningOutcome: true } });
+  markets = await db.market.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, title: true, endTime: true, totalPool: true, status: true, winningOutcome: true, createdAt: true, onchainAddr: true } });
     }
     // Map markets and, if we have onchainAddr, fetch pools for each to show yes/no pools
     const mapped = await Promise.all(
@@ -63,11 +67,28 @@ export async function GET() {
           winningOutcome: m.winningOutcome ?? undefined,
           yesPool,
           noPool,
+          createdAt: m.createdAt ? new Date(m.createdAt).getTime() : 0,
         };
       })
     );
 
-    return NextResponse.json(mapped, { status: 200 });
+    // Server-side sorting
+    let sorted = [...mapped];
+    if (sort === 'trending') {
+      sorted.sort((a, b) => (b.yesPool + b.noPool) - (a.yesPool + a.noPool));
+    } else if (sort === 'new') {
+      sorted.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } else if (sort === 'ending') {
+      const withEnd = sorted.filter((m) => m.endTime && m.endTime > 0);
+      const withoutEnd = sorted.filter((m) => !m.endTime || m.endTime === 0);
+      withEnd.sort((a, b) => (a.endTime || 0) - (b.endTime || 0));
+      sorted = [...withEnd, ...withoutEnd];
+    }
+
+    // Remove createdAt from response payload (internal sorting only)
+    const response = sorted.map(({ createdAt, ...rest }) => rest);
+
+    return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
     console.error("Markets list error:", error);
     return jsonError(error?.message ?? 'Internal server error', 500);
