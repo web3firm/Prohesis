@@ -3,21 +3,25 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect, useEnsName, useEnsAvatar } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 
 export default function Navbar() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
+  const { data: ensName } = useEnsName({ address: address as any, chainId: 1 } as any);
+  const { data: ensAvatar } = useEnsAvatar({ name: ensName as any, chainId: 1 } as any);
   const { disconnect } = useDisconnect();
+  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
-        <Link href="/user" className="text-lg font-semibold text-blue-600">
+        <Link href="/app" className="text-lg font-semibold text-blue-600">
           Prohesis
         </Link>
 
@@ -27,6 +31,16 @@ export default function Navbar() {
         />
 
         <div className="flex items-center gap-3 relative">
+          {/* Desktop theme toggle */}
+          <button
+            aria-label="Toggle theme"
+            className="hidden md:grid place-items-center size-9 rounded-full border bg-white hover:bg-gray-50"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title="Toggle theme"
+          >
+            {theme === "dark" ? "🌙" : "☀️"}
+          </button>
+
           {!isConnected ? (
             <ConnectButton
               label="Connect Wallet"
@@ -40,13 +54,19 @@ export default function Navbar() {
                 onClick={() => setOpen((o) => !o)}
                 className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border px-3 py-1.5 rounded-full transition"
               >
-                <span className="text-sm font-medium text-blue-700">
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                {ensAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={ensAvatar} alt="avatar" className="w-6 h-6 rounded-full" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full grid place-items-center bg-blue-200 text-blue-800 text-xs font-semibold">
+                    {(address || "0xU").slice(2, 3).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-sm font-medium text-blue-700 truncate max-w-[120px]">
+                  {ensName || `${address?.slice(0, 6)}...${address?.slice(-4)}`}
                 </span>
                 <svg
-                  className={`w-4 h-4 transition-transform ${
-                    open ? "rotate-180" : ""
-                  }`}
+                  className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={2}
@@ -72,16 +92,7 @@ export default function Navbar() {
                         setOpen(false);
                       }}
                     >
-                      👤 Profile
-                    </button>
-                    <button
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
-                      onClick={() => {
-                        router.push("/user/Dashboard");
-                        setOpen(false);
-                      }}
-                    >
-                      📊 Dashboard
+                      � User
                     </button>
                     <div className="border-t my-1" />
                     <button
@@ -114,7 +125,7 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 4 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-44 rounded-xl border bg-white shadow-lg overflow-hidden z-40"
+                  className="absolute right-0 mt-2 w-52 rounded-xl border bg-white shadow-lg overflow-hidden z-40"
                 >
                   <Link
                     href="/user/leaderboard"
@@ -123,13 +134,29 @@ export default function Navbar() {
                   >
                     🏆 Leaderboard
                   </Link>
-                  <Link
-                    href="/user/Markets"
+                  <a
+                    href="#"
                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                     onClick={() => setMenu(false)}
                   >
-                    🎯 Markets
-                  </Link>
+                    📚 Docs
+                  </a>
+                  <a
+                    href="#"
+                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setMenu(false)}
+                  >
+                    💬 Social
+                  </a>
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 md:hidden"
+                    onClick={() => {
+                      setTheme(theme === "dark" ? "light" : "dark");
+                      setMenu(false);
+                    }}
+                  >
+                    {theme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"}
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>

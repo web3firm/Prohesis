@@ -20,10 +20,10 @@ export default function AnalyticsPage() {
       <h1 className="text-2xl font-semibold">Analytics</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat label="Markets" value={a.totalMarkets ?? 0} />
-        <Stat label="Users" value={a.totalUsers ?? 0} />
-        <Stat label="Bets" value={a.totalBets ?? 0} />
-        <Stat label="Volume" value={(a.totalVolume ?? 0).toFixed(2)} />
+  <Stat label="Markets" value={a.totalMarkets ?? 0} />
+  <Stat label="Users" value={a.totalUsers ?? 0} />
+  <Stat label="Bets" value={a.totalBets ?? 0} />
+  <Stat label="Volume" value={(a.totalVolume ?? 0).toFixed(2)} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -31,13 +31,13 @@ export default function AnalyticsPage() {
           title="Top Markets by Pool"
           labels={(a.topMarkets || []).map((m: any) => m.title)}
           data={(a.topMarkets || []).map((m: any) => m.totalPool)}
-          color="#7E3AF2"
+          color="#DB2777"
         />
         <ChartCard
           title="Recent Users (count)"
           labels={(data.stats?.recentUsers || []).map((u: any) => u.displayName || u.email || u.id)}
           data={(data.stats?.recentUsers || []).map(() => 1)}
-          color="#10b981"
+          color="#F472B6"
         />
       </div>
     </div>
@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-white rounded-xl border shadow-sm p-4 text-center">
-      <p className="text-2xl font-semibold text-[#7E3AF2]">{value}</p>
+      <p className="text-2xl font-semibold text-[#DB2777]">{value}</p>
       <p className="text-sm text-gray-500">{label}</p>
     </div>
   );

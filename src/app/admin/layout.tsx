@@ -22,10 +22,10 @@ function NavItem({ href, label, icon }: { href: string; label: string; icon: Rea
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#EDE4FF" }}>
-      {/* Purple sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col p-4 text-white" style={{ backgroundColor: "#7E3AF2" }}>
-        <div className="px-3 py-2 mb-4 font-semibold text-lg">Prohesis Admin</div>
+    <div className="flex min-h-screen" style={{ backgroundColor: "#FCE7F3" }}>
+      {/* Pink sidebar */}
+      <aside className="hidden lg:flex w-64 flex-col p-4 text-white" style={{ backgroundColor: "#DB2777" }}>
+        <div className="px-3 py-2 mb-4 font-semibold text-lg text-pink-100">Prohesis Admin</div>
         <nav className="flex flex-col gap-1">
           <NavItem href="/admin" label="Dashboard" icon={<Home size={16} />} />
           <NavItem href="/admin/analytics" label="Analytics" icon={<BarChart2 size={16} />} />

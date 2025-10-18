@@ -3,122 +3,105 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 import { useAccount, useDisconnect } from "wagmi";
-import { Home, Users, Newspaper, Briefcase, Grid, FileText, Heart, Sun, Moon, LogOut, Search, Bell, Settings } from "lucide-react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { Home, BarChart2, User as UserIcon, Settings, ChevronLeft, ChevronRight, Sun, Moon, LogOut } from "lucide-react";
 
-const tabs = [
-  { href: "/user/Dashboard", label: "Home" },
-  { href: "/user/contacts", label: "Contacts" },
-  { href: "/user/news", label: "News" },
-  { href: "/user/employees", label: "For employees" },
-  { href: "/user/apps", label: "Applications" },
-  { href: "/user/docs", label: "Documents" },
-];
-
-function IconRail() {
-  return (
-    <aside className="hidden md:flex w-16 shrink-0 flex-col items-center gap-4 border-r bg-white/90 backdrop-blur py-4">
-      <div className="w-8 h-8 rounded-full bg-blue-600 text-white grid place-items-center font-bold">P</div>
-      <NavIcon icon={<Home size={18} />} href="/user/Dashboard" title="Home" />
-      <NavIcon icon={<Users size={18} />} href="/user/contacts" title="Contacts" />
-      <NavIcon icon={<Newspaper size={18} />} href="/user/news" title="News" />
-      <NavIcon icon={<Briefcase size={18} />} href="/user/employees" title="For employees" />
-      <NavIcon icon={<Grid size={18} />} href="/user/apps" title="Applications" />
-      <NavIcon icon={<FileText size={18} />} href="/user/docs" title="Documents" />
-      <div className="mt-auto pb-2">
-        <NavIcon icon={<Heart size={18} />} href="#" title="Favorites" />
-      </div>
-    </aside>
-  );
-}
-
-function NavIcon({ icon, href, title }: { icon: React.ReactNode; href: string; title: string }) {
+function NavItem({ href, label, icon, collapsed }: { href: string; label: string; icon: React.ReactNode; collapsed: boolean }) {
   const pathname = usePathname();
   const active = pathname === href;
   return (
     <Link
       href={href}
-      className={`p-2 rounded-lg transition-colors ${active ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-blue-50"}`}
-      title={title}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+        active ? "bg-blue-600 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
+      }`}
+      title={label}
     >
       {icon}
+      {!collapsed && <span className="text-sm font-medium">{label}</span>}
     </Link>
   );
 }
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("userSidebarCollapsed");
+    if (stored) setCollapsed(stored === "1");
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("userSidebarCollapsed", collapsed ? "1" : "0");
+  }, [collapsed]);
+
+  // Gate the entire user area behind wallet connection
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen grid place-items-center" style={{ backgroundColor: "#EAF2FF" }}>
+        <div className="bg-white/80 backdrop-blur border rounded-2xl p-8 max-w-md text-center shadow-sm">
+          <div className="text-2xl font-semibold mb-2 text-blue-700">Connect your wallet</div>
+          <p className="text-sm text-gray-600 mb-4">Sign in with your wallet to access your dashboard and bets.</p>
+          <div className="inline-block"><ConnectButton /></div>
+          <p className="text-xs text-gray-400 mt-4">Or explore markets on the <Link href="/app" className="text-blue-600 hover:underline">main page</Link>.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-b from-blue-50 to-white">
-      {/* Left icon rail */}
-      <IconRail />
-
-      {/* Main area */}
-      <div className="flex-1 min-w-0">
-        {/* Top navigation */}
-        <div className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b">
-          <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-4">
-            {/* Brand */}
-            <div className="hidden md:block text-xl font-semibold text-blue-700">Prohesis</div>
-
-            {/* Tabs */}
-            <nav className="hidden md:flex items-center gap-1">
-              {tabs.map((t) => {
-                const active = pathname === t.href;
-                return (
-                  <Link
-                    key={t.href}
-                    href={t.href}
-                    className={`px-3 py-2 rounded-md text-sm transition-colors ${active ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-blue-50"}`}
-                  >
-                    {t.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Search */}
-            <div className="ml-auto flex-1 max-w-xl relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                placeholder="Search"
-                className="w-full rounded-full border pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Theme + Notifications + Settings + Session */}
-            <div className="flex items-center gap-2 ml-2">
-              <button className="p-2 rounded-md border hover:bg-blue-50" title="Notifications">
-                <Bell size={18} />
-              </button>
-              <button className="p-2 rounded-md border hover:bg-blue-50" title="Settings">
-                <Settings size={18} />
-              </button>
-              <button
-                className="p-2 rounded-md border hover:bg-blue-50"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                title="Toggle theme"
-                aria-label="Toggle theme"
-              >
-                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              {/* Avatar placeholder */}
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white grid place-items-center text-xs font-semibold" title="Profile">PR</div>
-              {isConnected && (
-                <button className="p-2 rounded-md border text-red-600 hover:bg-red-50" onClick={() => disconnect()} title="Disconnect">
-                  <LogOut size={18} />
-                </button>
-              )}
-            </div>
-          </div>
+    <div className="flex min-h-screen" style={{ backgroundColor: "#EAF2FF" }}>
+      {/* Blue sidebar */}
+      <aside
+        className={`hidden lg:flex flex-col p-4 text-white transition-[width] duration-200 ${collapsed ? "w-20" : "w-64"}`}
+        style={{ backgroundColor: "#1D4ED8" }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          {!collapsed && <div className="px-3 py-2 font-semibold text-lg text-blue-200">Prohesis</div>}
+          <button
+            className="ml-auto p-2 rounded-lg hover:bg-white/10"
+            onClick={() => setCollapsed((v) => !v)}
+            title={collapsed ? "Expand" : "Collapse"}
+            aria-label="Toggle sidebar"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
+        <nav className="flex flex-col gap-1">
+          <NavItem href="/user" label="Dashboard" icon={<Home size={16} />} collapsed={collapsed} />
+          <NavItem href="/user/analytics" label="Analytics" icon={<BarChart2 size={16} />} collapsed={collapsed} />
+          <NavItem href="/user/profile" label="Profile" icon={<UserIcon size={16} />} collapsed={collapsed} />
+          <NavItem href="/user/Settings" label="Settings" icon={<Settings size={16} />} collapsed={collapsed} />
+        </nav>
+        <div className="mt-auto pt-4 border-t border-white/20 space-y-2">
+          <button
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title="Toggle theme"
+          >
+            {<Sun size={16} className={theme === "dark" ? "hidden" : "block"} />}
+            {<Moon size={16} className={theme === "dark" ? "block" : "hidden"} />}
+            {!collapsed && <span className="text-sm font-medium">Theme</span>}
+          </button>
+          {isConnected && (
+            <button
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white"
+              onClick={() => disconnect()}
+            >
+              <LogOut size={16} />
+              {!collapsed && <span className="text-sm font-medium">Disconnect</span>}
+            </button>
+          )}
+        </div>
+      </aside>
 
-        {/* Content */}
-        <main className="max-w-7xl mx-auto p-4 md:p-6">{children}</main>
+      {/* Content area */}
+      <div className="flex-1 flex flex-col">
+        <main className="p-0 flex-1">{children}</main>
       </div>
     </div>
   );
