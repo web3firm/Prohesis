@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
     <div className="p-6 max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Analytics</h1>
-        <button onClick={syncNow} className="px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: '#E11D48' }}>Sync now</button>
+  <button onClick={syncNow} className="px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: '#1D4ED8' }}>Sync now</button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -41,13 +41,13 @@ export default function AnalyticsPage() {
           title="Top Markets by Pool"
           labels={(a.topMarkets || []).map((m: any) => m.title)}
           data={(a.topMarkets || []).map((m: any) => m.totalPool)}
-          color="#E11D48"
+          color="#1D4ED8"
         />
         <ChartCard
           title="Recent Users (count)"
           labels={(data.stats?.recentUsers || []).map((u: any) => u.displayName || u.email || u.id)}
           data={(data.stats?.recentUsers || []).map(() => 1)}
-          color="#FB7185"
+          color="#3B82F6"
         />
       </div>
     </div>
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-white rounded-xl border shadow-sm p-4 text-center">
-      <p className="text-2xl font-semibold text-[#E11D48]">{value}</p>
+      <p className="text-2xl font-semibold text-[#1D4ED8]">{value}</p>
       <p className="text-sm text-gray-500">{label}</p>
     </div>
   );

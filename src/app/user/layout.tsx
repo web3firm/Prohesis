@@ -61,7 +61,11 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         style={{ backgroundColor: "#1D4ED8" }}
       >
         <div className="flex items-center justify-between mb-4">
-          {!collapsed && <div className="px-3 py-2 font-semibold text-lg text-blue-200">Prohesis</div>}
+          {!collapsed && <div className="px-3 py-2 font-semibold text-lg text-blue-200"><Link href="/app" className="logo">
+  Prohesis
+</Link>
+
+</div>}
           <button
             className="ml-auto p-2 rounded-lg hover:bg-white/10"
             onClick={() => setCollapsed((v) => !v)}
@@ -72,7 +76,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           </button>
         </div>
         <nav className="flex flex-col gap-1">
-          <NavItem href="/user" label="Dashboard" icon={<Home size={16} />} collapsed={collapsed} />
+          <NavItem href="/user/Dashboard" label="Dashboard" icon={<Home size={16} />} collapsed={collapsed} />
           <NavItem href="/user/analytics" label="Analytics" icon={<BarChart2 size={16} />} collapsed={collapsed} />
           <NavItem href="/user/profile" label="Profile" icon={<UserIcon size={16} />} collapsed={collapsed} />
           <NavItem href="/user/Settings" label="Settings" icon={<Settings size={16} />} collapsed={collapsed} />

@@ -88,11 +88,11 @@ export default function Navbar() {
                     <button
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
                       onClick={() => {
-                        router.push("/user/profile");
+                        router.push("/user/Dashboard");
                         setOpen(false);
                       }}
                     >
-                      � User
+                      🏠 Dashboard
                     </button>
                     <div className="border-t my-1" />
                     <button
@@ -128,25 +128,50 @@ export default function Navbar() {
                   className="absolute right-0 mt-2 w-52 rounded-xl border bg-white shadow-lg overflow-hidden z-40"
                 >
                   <Link
-                    href="/user/leaderboard"
+                    href="/leaderboard"
                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                     onClick={() => setMenu(false)}
                   >
                     🏆 Leaderboard
                   </Link>
-                  <a
-                    href="#"
+                  <Link
+                    href="/docs"
                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                     onClick={() => setMenu(false)}
                   >
                     📚 Docs
-                  </a>
-                  <a
-                    href="#"
+                  </Link>
+                  <Link
+                    href="/about"
                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                     onClick={() => setMenu(false)}
                   >
-                    💬 Social
+                    ℹ️ About
+                  </Link>
+                  <Link
+                    href="/status"
+                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setMenu(false)}
+                  >
+                    📈 Status
+                  </Link>
+                  <a
+                    href="https://twitter.com/prohesis"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setMenu(false)}
+                  >
+                    𝕏 Twitter
+                  </a>
+                  <a
+                    href="https://discord.gg/prohesis"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setMenu(false)}
+                  >
+                    💬 Discord
                   </a>
                   <button
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 md:hidden"

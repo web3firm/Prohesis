@@ -1,4 +1,4 @@
-import { createPublicClient, getContract, http } from "viem";
+import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import db from "@/lib/offchain/services/dbClient";

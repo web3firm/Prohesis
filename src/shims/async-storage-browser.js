@@ -3,7 +3,7 @@
 const isLocalStorageAvailable = (() => {
   try {
     return typeof localStorage !== 'undefined'
-  } catch (e) {
+  } catch {
     return false
   }
 })();

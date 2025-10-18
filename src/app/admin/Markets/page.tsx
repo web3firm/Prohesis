@@ -22,29 +22,37 @@ export default function AdminMarketsPage() {
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadMarkets() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/markets/list");
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
-        }
-        const data = await res.json();
-        if (!Array.isArray(data)) {
-          throw new Error("Malformed API response");
-        }
-        setMarkets(data);
-      } catch (e: any) {
-        setError(e.message || "Failed to load markets");
-        setMarkets([]);
-      } finally {
-        setLoading(false);
+  async function loadMarkets() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/markets/list");
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
       }
+      const data = await res.json();
+      if (!Array.isArray(data)) {
+        throw new Error("Malformed API response");
+      }
+      setMarkets(data);
+    } catch (e: any) {
+      setError(e.message || "Failed to load markets");
+      setMarkets([]);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     loadMarkets();
   }, []);
+
+  async function syncNow() {
+    try {
+      await fetch('/api/markets/sync-from-factory', { method: 'POST' });
+    } catch {}
+    await loadMarkets();
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -177,7 +185,7 @@ export default function AdminMarketsPage() {
             <button
               type="submit"
               className="px-4 py-2 rounded-lg text-white disabled:opacity-60"
-              style={{ backgroundColor: "#DB2777" }}
+              style={{ backgroundColor: "#1D4ED8" }}
               disabled={creating}
             >
               {creating ? "Creating…" : "Create market"}
@@ -200,12 +208,13 @@ export default function AdminMarketsPage() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`px-3 py-1 rounded-md text-sm capitalize ${tab===t?"bg-[#7E3AF2] text-white":"text-gray-700 hover:bg-gray-50"}`}
+                className={`px-3 py-1 rounded-md text-sm capitalize ${tab===t?"bg-blue-600 text-white":"text-gray-700 hover:bg-gray-50"}`}
               >
                 {t}
               </button>
             ))}
           </div>
+          <button onClick={syncNow} className="ml-2 px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: '#1D4ED8' }}>Sync now</button>
         </div>
 
         {error ? (
@@ -260,7 +269,7 @@ export default function AdminMarketsPage() {
                         <td>
                           <button
                             className="px-3 py-1 rounded-md text-white disabled:opacity-60"
-                            style={{ backgroundColor: "#DB2777" }}
+                            style={{ backgroundColor: "#1D4ED8" }}
                             onClick={() => handleResolve(Number(m.id))}
                             disabled={resolvingId === Number(m.id)}
                           >

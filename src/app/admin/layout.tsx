@@ -11,7 +11,7 @@ function NavItem({ href, label, icon }: { href: string; label: string; icon: Rea
     <Link
       href={href}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-        active ? "bg-[#9b6bff] text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
+        active ? "bg-blue-600 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
       }`}
     >
       {icon}
@@ -22,10 +22,10 @@ function NavItem({ href, label, icon }: { href: string; label: string; icon: Rea
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: "#FFF1F2" }}>
-      {/* Rose sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col p-4 text-white" style={{ backgroundColor: "#E11D48" }}>
-        <div className="px-3 py-2 mb-4 font-semibold text-lg text-rose-100">Prohesis Admin</div>
+    <div className="flex min-h-screen" style={{ backgroundColor: "#EAF2FF" }}>
+      {/* Blue sidebar */}
+      <aside className="hidden lg:flex w-64 flex-col p-4 text-white" style={{ backgroundColor: "#1D4ED8" }}>
+        <div className="px-3 py-2 mb-4 font-semibold text-lg text-blue-100">Prohesis Admin</div>
         <nav className="flex flex-col gap-1">
           <NavItem href="/admin" label="Dashboard" icon={<Home size={16} />} />
           <NavItem href="/admin/analytics" label="Analytics" icon={<BarChart2 size={16} />} />

@@ -22,6 +22,8 @@ export default function MarketDetailPage() {
   const [isEligibleToClaim, setIsEligibleToClaim] = useState<boolean | null>(null);
   const { addToast } = useToast();
   const odds = useMemo(() => getImpliedOddsFromPools(pools), [pools]);
+  const [endTime, setEndTime] = useState<number | null>(null);
+  const marketEnded = endTime ? Date.now() >= endTime : false;
 
   const [amount, setAmount] = useState<string>("");
   const [selected, setSelected] = useState<number>(0);
@@ -42,12 +44,20 @@ export default function MarketDetailPage() {
         setOutcomes(o.length ? o : ["Yes", "No"]); // fallback UI
         const p = await getPools(marketId);
         setPools(p);
+        // Fetch end time to disable betting after expiry
+        try {
+          const res = await fetch(`/api/markets/details/${marketId}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.endTime) setEndTime(Number(json.endTime));
+          }
+        } catch {}
         // Check claim eligibility
         try {
           const res = await fetch('/api/payouts/validate?marketId=' + marketId + '&user=' + (address ?? ''));
           const data = await res.json();
           setIsEligibleToClaim(Boolean(data?.eligible));
-        } catch (e) {
+        } catch {
           setIsEligibleToClaim(null);
         }
       } catch (e: any) {
@@ -66,7 +76,7 @@ export default function MarketDetailPage() {
         const res = await fetch('/api/payouts/validate?marketId=' + marketId + '&user=' + (address ?? ''));
         const data = await res.json();
         if (mounted) setIsEligibleToClaim(Boolean(data?.eligible));
-      } catch (e) {
+      } catch {
         if (mounted) setIsEligibleToClaim(null);
       }
     }
@@ -183,44 +193,65 @@ export default function MarketDetailPage() {
       </div>
 
       {/* Outcomes with odds and pools */}
-      <div className="mt-6 grid grid-cols-1 gap-4">
-        {outcomes.map((label, i) => (
-          <button
-            key={i}
-            onClick={() => setSelected(i)}
-            className={`w-full flex flex-col md:flex-row items-center justify-between p-4 border-2 rounded-xl shadow-sm transition-all ${
-              selected === i ? "border-blue-600 bg-blue-50" : "border-gray-200 bg-white hover:bg-gray-50"
-            }`}
-          >
-            <div className="flex flex-col items-start">
-              <span className="font-semibold text-lg text-gray-900">{label}</span>
-              <span className="text-xs text-gray-500 mt-1">Pool: {pools[i] ? pools[i].toFixed(4) : "0.0000"} ETH</span>
-            </div>
-            <div className="flex flex-col items-end mt-2 md:mt-0">
-              <span className="text-blue-600 font-bold text-xl">{odds[i] ? odds[i].toFixed(1) : "0.0"}%</span>
-              <span className="text-xs text-gray-400">Implied Odds</span>
-            </div>
-          </button>
-        ))}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {outcomes.map((label, i) => {
+          const active = selected === i;
+          const color = i === 0 ? 'from-green-600 to-green-500' : 'from-red-500 to-red-400';
+          const bgActive = i === 0 ? 'bg-green-50' : 'bg-red-50';
+          return (
+            <button
+              key={i}
+              onClick={() => setSelected(i)}
+              disabled={marketEnded}
+              className={`w-full text-left p-5 border-2 rounded-2xl shadow-sm transition-all ${active ? `border-transparent ${bgActive}` : 'border-gray-200 bg-white hover:bg-gray-50'} ${marketEnded ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm text-gray-500">Outcome</div>
+                  <div className="font-semibold text-xl text-gray-900">{label}</div>
+                  <div className="text-xs text-gray-500 mt-1">Pool: {pools[i] ? pools[i].toFixed(4) : '0.0000'} ETH</div>
+                </div>
+                <div className={`rounded-xl text-white px-3 py-2 bg-gradient-to-r ${color}`}>
+                  <div className="text-lg font-bold">{odds[i] ? odds[i].toFixed(1) : '0.0'}%</div>
+                  <div className="text-[10px] opacity-90">Implied</div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Bet form */}
       <div className="mt-8 bg-white rounded-xl shadow p-6">
         <label className="block text-sm font-medium mb-2">Stake (ETH)</label>
-        <input
-          type="number"
-          min="0"
-          step="0.0001"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full border-2 border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="0.01"
-        />
+        <div className="flex gap-2">
+          <input
+            type="number"
+            min="0"
+            step="0.0001"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="flex-1 border-2 border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="0.01"
+            disabled={marketEnded}
+          />
+          {([0.01, 0.05, 0.1] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setAmount(String(v))}
+              disabled={marketEnded}
+              className="px-3 py-2 border rounded-lg text-sm bg-white hover:bg-gray-50"
+            >
+              {v} ETH
+            </button>
+          ))}
+        </div>
 
         <button
           onClick={handleBet}
-          disabled={isPending || isConfirming}
-          className="mt-4 w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-lg transition-all shadow"
+          disabled={marketEnded || isPending || isConfirming}
+          className="mt-4 w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-lg transition-all shadow disabled:opacity-60"
         >
           {isPending
             ? "Confirm in wallet…"

@@ -10,7 +10,12 @@ export default function AppHome() {
   const [tab, setTab] = useState<"trending" | "new" | "ending">("trending");
   const { data, isLoading } = useSWR<any[]>(`/api/markets/list?sort=${tab}` as const, fetcher);
 
-  const markets = data || [];
+  const now = Date.now();
+  const markets = (data || []).filter((m) => {
+    const ended = m.endTime && Number(m.endTime) > 0 ? Number(m.endTime) <= now : false;
+    const resolved = (m.status || '').toLowerCase() === 'resolved' || typeof m.winningOutcome !== 'undefined';
+    return !ended && !resolved;
+  });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#EAF2FF" }}>

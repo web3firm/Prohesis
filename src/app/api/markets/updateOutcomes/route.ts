@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
-import { createPublicClient, getContract, http } from "viem";
-import { sepolia } from "viem/chains";
-import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
-import { CONTRACT_ADDRESS } from "@/lib/utils/constants";
+// No direct viem usage here; on-chain reads are delegated to readFunctions
 import db from "@/lib/offchain/services/dbClient";
 import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
   try {
-    const client = createPublicClient({ chain: sepolia, transport: http() });
-    const contract = getContract({
-      address: CONTRACT_ADDRESS,
-      abi: (MarketABI as any).abi,
-      client,
-    });
 
   const markets = await db.market.findMany();
 
@@ -44,7 +35,7 @@ export async function GET() {
               totalStaked: pools[i],
             },
           });
-        } catch (_e) {
+        } catch {
           // fallback: ignore per-outcome persistence and continue
           continue;
         }
@@ -52,8 +43,8 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, updated: markets.length });
-  } catch (_error: any) {
-    console.error("Outcome sync error:", _error);
-    return jsonError(_error?.message ?? 'Internal server error', 500);
+  } catch (error: any) {
+    console.error("Outcome sync error:", error);
+    return jsonError(error?.message ?? 'Internal server error', 500);
   }
 }

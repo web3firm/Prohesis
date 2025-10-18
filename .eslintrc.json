@@ -6,5 +6,20 @@
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
     "@next/next/no-html-link-for-pages": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.cjs",
+        "scripts/**/*.js",
+        "scripts/**/*.mjs",
+        "src/scripts/**/*.js",
+        "src/scripts/**/*.cjs",
+        "hardhat.config.js"
+      ],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off"
+      }
+    }
+  ]
 }

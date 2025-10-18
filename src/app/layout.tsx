@@ -3,10 +3,27 @@ import  ThemeProvider  from "@/context/ThemeProvider";
 import  {Web3Provider}  from "@/context/Web3Provider";
 import  AuthProvider  from "@/context/AuthProvider";
 import { ToasterProvider } from "@/components/ui/Toaster";
+import Footer from "@/components/ui/Footer";
 
 export const metadata = {
-  title: "Prohesis",
-  description: "Web3 Prediction Market Platform",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
+  title: {
+    default: 'Prohesis',
+    template: '%s · Prohesis',
+  },
+  description: 'Web3 Prediction Market Platform',
+  openGraph: {
+    title: 'Prohesis',
+    description: 'Web3 Prediction Market Platform',
+    url: '/',
+    siteName: 'Prohesis',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@prohesis',
+    creator: '@prohesis',
+  }
 };
 
 export default function RootLayout({
@@ -22,6 +39,7 @@ export default function RootLayout({
           <Web3Provider>
             <AuthProvider>
               {children}
+              <Footer />
             </AuthProvider>
           </Web3Provider>
         </ThemeProvider>

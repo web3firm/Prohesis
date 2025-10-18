@@ -5,9 +5,6 @@ import { getPoolsForMarket } from "@/lib/onchain/readFunctions";
 // If you already created /src/lib/onchain/abis/index.ts with exports, you can instead:
 // import { MarketABI } from "@/lib/onchain/abis";
 
-// Intentionally unused: left for reference
-const _CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MARKET_CONTRACT as `0x${string}` | undefined;
-
 export async function GET() {
   try {
     // No global CONTRACT_ADDRESS required here — we will read per-market
@@ -50,7 +47,7 @@ export async function GET() {
           // Fallback: write to market.totalPool
           await db.market.update({ where: { id: m.id }, data: { totalPool: total } });
         }
-      } catch (_e) {
+      } catch {
         console.warn("Failed to fetch pools for", m.id);
         continue;
       }
