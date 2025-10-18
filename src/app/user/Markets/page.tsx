@@ -33,7 +33,7 @@ export default function MarketsPage() {
             } else {
               setMarkets([]);
             }
-          } catch (e) {
+          } catch (_e) {
             setMarkets([]);
           }
         } else {
