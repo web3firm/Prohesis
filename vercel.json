@@ -1,15 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/next" }
-  ],
-  "env": {
-    "NEXT_TELEMETRY_DISABLED": "1"
-  },
   "functions": {
-    "api/**/*.func": {
+    "api/**/*.ts": {
       "runtime": "nodejs20.x"
     }
+  },
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
   }
 }

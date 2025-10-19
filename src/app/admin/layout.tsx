@@ -21,6 +21,11 @@ function NavItem({ href, label, icon }: { href: string; label: string; icon: Rea
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  // Render bare layout for the login route to avoid showing the admin sidebar
+  if (pathname.startsWith("/admin/login")) {
+    return <div className="min-h-screen">{children}</div>;
+  }
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: "#EAF2FF" }}>
       {/* Blue sidebar */}
