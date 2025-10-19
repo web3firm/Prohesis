@@ -55,12 +55,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="flex items-center gap-3">
                   <Avatar.Root className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
                     <Avatar.Fallback className="text-white text-sm">
-                      {(session?.user?.email?.[0] || session?.user?.wallet?.slice(2,3) || "A").toUpperCase()}
+                      {(
+                        ((session?.user as any)?.email?.[0]) ||
+                        ((session?.user as any)?.wallet?.slice?.(2, 3)) ||
+                        "A"
+                      ).toUpperCase()}
                     </Avatar.Fallback>
                   </Avatar.Root>
                   <div className="text-left">
                     <div className="text-sm font-medium truncate max-w-[120px]">
-                      {session?.user?.email || session?.user?.wallet || "Admin"}
+                      {(session?.user as any)?.email || (session?.user as any)?.wallet || "Admin"}
                     </div>
                     <div className="text-xs text-blue-100">Admin</div>
                   </div>
@@ -70,7 +74,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </DropdownMenu.Trigger>
             <DropdownMenu.Content side="top" align="end" className="min-w-[180px] rounded-md bg-white text-gray-800 shadow-lg p-1">
               <DropdownMenu.Item asChild>
-                <Link href="/admin/settings" className="block px-3 py-2 rounded hover:bg-gray-100 text-sm">Profile & settings</Link>
+                <button
+                  className="w-full text-left block px-3 py-2 rounded hover:bg-gray-100 text-sm"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/admin/me');
+                      const json = await res.json();
+                      if (json?.success && json?.id) {
+                        window.location.href = `/admin/users/${encodeURIComponent(json.id)}`;
+                      } else {
+                        window.location.href = '/admin/settings';
+                      }
+                    } catch {
+                      window.location.href = '/admin/settings';
+                    }
+                  }}
+                >
+                  Profile & settings
+                </button>
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-1 h-px bg-gray-200" />
               <DropdownMenu.Item asChild>

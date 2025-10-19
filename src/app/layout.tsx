@@ -3,7 +3,7 @@ import  ThemeProvider  from "@/context/ThemeProvider";
 import  {Web3Provider}  from "@/context/Web3Provider";
 import  AuthProvider  from "@/context/AuthProvider";
 import { ToasterProvider } from "@/components/ui/Toaster";
-import Footer from "@/components/ui/Footer";
+import FooterGate from "@/components/ui/FooterGate";
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
@@ -39,7 +39,7 @@ export default function RootLayout({
           <Web3Provider>
             <AuthProvider>
               {children}
-              <Footer />
+                    <FooterGate />
             </AuthProvider>
           </Web3Provider>
         </ThemeProvider>
