@@ -80,7 +80,7 @@ export const authOptions: any = {
       },
     }),
   ],
-  pages: { signIn: "" },
+  pages: { signIn: "/admin/auth/login" },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, user }: any) {
