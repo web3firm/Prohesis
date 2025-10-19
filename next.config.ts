@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
       { source: "/Leaderboard", destination: "/leaderboard", permanent: true },
       // convenience redirect if someone hits /docs/README
       { source: "/docs/README", destination: "/docs", permanent: true },
+      // move login route under /admin/login
+      { source: "/login", destination: "/admin/login", permanent: true },
     ];
   }
 };

@@ -80,24 +80,30 @@ export const authOptions: any = {
       },
     }),
   ],
-  pages: { signIn: "/login" },
+  pages: { signIn: "/admin/login" },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, user }: any) {
       if (user) {
         if ((user as any).wallet) token.wallet = (user as any).wallet;
         if ((user as any).email) token.email = (user as any).email;
+        // Env-based admin login gets admin claim directly
+        if ((user as any).id === "env-admin") {
+          token.isAdmin = true;
+        }
       }
       // set admin claim if email or wallet is in Admin table
       const email = (token.email || "").toLowerCase();
       const wallet = (token.wallet || "").toLowerCase();
-      const admin = await db.admin.findFirst({
-        where: {
-          OR: [email ? { email } : undefined, wallet ? { wallet } : undefined].filter(Boolean) as any,
-        },
-        select: { id: true },
-      });
-      token.isAdmin = !!admin;
+      if (token.isAdmin !== true) {
+        const admin = await db.admin.findFirst({
+          where: {
+            OR: [email ? { email } : undefined, wallet ? { wallet } : undefined].filter(Boolean) as any,
+          },
+          select: { id: true },
+        });
+        token.isAdmin = !!admin;
+      }
       return token;
     },
     async session({ session, token }: any) {

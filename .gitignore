@@ -33,3 +33,4 @@ Thumbs.db
 # Local dev artifacts
 next-dev.log
 tmp/
+.vercel
