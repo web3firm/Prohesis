@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BarChart2, Store, Users, FileText, Settings, PlusCircle, LogOut } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import * as Avatar from "@radix-ui/react-avatar";
+import { Home, BarChart2, Store, Users, FileText, Settings, PlusCircle, LogOut, User as UserIcon } from "lucide-react";
 
 function NavItem({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,8 +25,9 @@ function NavItem({ href, label, icon }: { href: string; label: string; icon: Rea
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   // Render bare layout for the login route to avoid showing the admin sidebar
-  if (pathname.startsWith("/admin/login")) {
+  if (pathname.startsWith("/admin/auth/login")) {
     return <div className="min-h-screen">{children}</div>;
   }
   return (
@@ -44,10 +48,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <PlusCircle size={16} />
             <span className="text-sm font-medium">Add market</span>
           </Link>
-          <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white">
-            <LogOut size={16} />
-            <span className="text-sm font-medium">Log out</span>
-          </button>
+          {/* Profile dropdown */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-white/90 hover:bg-white/10 hover:text-white">
+                <div className="flex items-center gap-3">
+                  <Avatar.Root className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
+                    <Avatar.Fallback className="text-white text-sm">
+                      {(session?.user?.email?.[0] || session?.user?.wallet?.slice(2,3) || "A").toUpperCase()}
+                    </Avatar.Fallback>
+                  </Avatar.Root>
+                  <div className="text-left">
+                    <div className="text-sm font-medium truncate max-w-[120px]">
+                      {session?.user?.email || session?.user?.wallet || "Admin"}
+                    </div>
+                    <div className="text-xs text-blue-100">Admin</div>
+                  </div>
+                </div>
+                <UserIcon size={16} />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content side="top" align="end" className="min-w-[180px] rounded-md bg-white text-gray-800 shadow-lg p-1">
+              <DropdownMenu.Item asChild>
+                <Link href="/admin/settings" className="block px-3 py-2 rounded hover:bg-gray-100 text-sm">Profile & settings</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator className="my-1 h-px bg-gray-200" />
+              <DropdownMenu.Item asChild>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/admin/auth/login" })}
+                  className="w-full text-left flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-sm"
+                >
+                  <LogOut size={14} /> Log out
+                </button>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
         </div>
       </aside>
 
