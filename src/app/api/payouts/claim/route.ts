@@ -3,6 +3,7 @@ import { verifyClaimTx } from "@/lib/onchain/writeFunctions";
 import { recordPayout } from "@/lib/offchain/api/payouts";
 import { z } from "zod";
 import { jsonError } from '@/lib/api/errorResponse';
+import { rateLimit } from '@/lib/api/rateLimit';
 
 // Expect client to call contract.claimWinnings(...) and then POST txHash + marketOnchainAddr
 const claimSchema = z.object({
@@ -11,8 +12,13 @@ const claimSchema = z.object({
   userId: z.string().min(1),
 });
 
+const limiter = rateLimit({ windowMs: 60_000, max: 10 });
 export async function POST(req: Request) {
   try {
+    const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'ip:unknown').split(',')[0].trim();
+    const verdict = limiter(`claim:${ip}`);
+    if (!verdict.allowed) return jsonError('Too many requests', 429);
+
     const body = await req.json();
     const parseResult = claimSchema.safeParse(body);
     if (!parseResult.success) { 

@@ -5,7 +5,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
   const urls = [
     '/',
-    '/app',
+    '/markets',
     '/leaderboard',
     '/docs',
     '/docs/PROHESIS',
@@ -13,10 +13,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/status',
     '/terms',
     '/privacy',
-    '/user/Dashboard',
-    '/user/Markets',
-    '/user/Settings',
-    '/user/analytics',
     '/admin'
   ]
 

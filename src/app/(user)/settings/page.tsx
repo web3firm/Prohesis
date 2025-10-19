@@ -20,9 +20,9 @@ export default function UserSettingsPage() {
       setLoading(true);
       const res = await fetch(`/api/profile?wallet=${address}`);
       const data = await res.json();
-  setEmail(data?.profile?.email || "");
-  setEmailUpdates(Boolean(data?.profile?.emailUpdates));
-  setMarketAlerts(Boolean(data?.profile?.marketAlerts ?? true));
+      setEmail(data?.profile?.email || "");
+      setEmailUpdates(Boolean(data?.profile?.emailUpdates));
+      setMarketAlerts(Boolean(data?.profile?.marketAlerts ?? true));
       setLoading(false);
     })();
   }, [address]);
@@ -75,3 +75,4 @@ export default function UserSettingsPage() {
     </div>
   );
 }
+

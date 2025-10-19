@@ -2,12 +2,26 @@ import { NextResponse } from "next/server";
 import db from "@/lib/offchain/services/dbClient";
 import { listFactoryMarkets, getOutcomesForMarket, getPoolsForMarket } from "@/lib/onchain/readFunctions";
 import { jsonError } from '@/lib/api/errorResponse';
+import { cacheGet, cacheSet } from '@/lib/offchain/services/cacheClient';
 
 // Patch: Return structure expected by MarketCard (id, title, endTime, yesPool, noPool)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const sort = (searchParams.get('sort') || 'trending') as 'trending' | 'new' | 'ending';
+    const cacheKey = `markets:list:v1:${sort}`;
+
+    // 1) Try cache first (short TTL)
+    const cached = await cacheGet<any[]>(cacheKey);
+    if (cached) {
+      return new NextResponse(JSON.stringify(cached), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 's-maxage=15, stale-while-revalidate=60',
+        },
+      });
+    }
 
     // Load all DB markets first
     let markets = await db.market.findMany({
@@ -116,7 +130,15 @@ export async function GET(req: Request) {
     // Remove createdAt from response payload (internal sorting only)
   const response = sorted.map((rest) => ({ ...rest }));
 
-    return NextResponse.json(response, { status: 200 });
+    // 2) Set cache (short TTL) and return with public caching headers
+    await cacheSet(cacheKey, response, 15);
+    return new NextResponse(JSON.stringify(response), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 's-maxage=15, stale-while-revalidate=60',
+      },
+    });
   } catch (error: any) {
     console.error("Markets list error:", error);
     return jsonError(error?.message ?? 'Internal server error', 500);

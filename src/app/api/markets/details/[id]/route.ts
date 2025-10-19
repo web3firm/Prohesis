@@ -30,11 +30,11 @@ export async function GET(_: Request, context: any) {
       const pools = await getPoolsForMarket(market.onchainAddr as `0x${string}`).catch(() => [0, 0]);
       const yesPool = pools[0] ?? 0;
       const noPool = pools[1] ?? 0;
-      return NextResponse.json({ id: String(market.id), title: market.title, endTime: new Date(market.endTime).getTime(), yesPool, noPool });
+      return NextResponse.json({ id: String(market.id), title: market.title, endTime: new Date(market.endTime).getTime(), yesPool, noPool, onchainAddr: market.onchainAddr });
     }
 
     // Fallback: return DB data
-    return NextResponse.json({ id: String(market.id), title: market.title, endTime: new Date(market.endTime).getTime(), yesPool: 0, noPool: 0 });
+  return NextResponse.json({ id: String(market.id), title: market.title, endTime: new Date(market.endTime).getTime(), yesPool: 0, noPool: 0, onchainAddr: market.onchainAddr ?? null });
   } catch (e: any) {
     console.error("Market details error:", e);
     return jsonError(e?.message ?? 'Internal server error', 500);

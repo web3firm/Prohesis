@@ -86,7 +86,7 @@ export function MarketCard({ market, href }: MarketCardProps) {
 
       <div className="mt-4 flex gap-2">
         <Link
-          href={href ?? `/user/Markets/${market.id}`}
+          href={href ?? `/markets/${market.id}`}
           className="btn-primary flex-1 text-sm text-center"
         >
           View Market →
@@ -97,8 +97,8 @@ export function MarketCard({ market, href }: MarketCardProps) {
             Claim
           </button>
         ) : (
-          <button className="btn-outline" onClick={() => window.location.href = (href ?? `/user/Markets/${market.id}`)}>
-            Claim
+          <button className="btn-outline" onClick={() => window.location.href = (href ?? `/markets/${market.id}`)}>
+            Bet
           </button>
         )}
       </div>

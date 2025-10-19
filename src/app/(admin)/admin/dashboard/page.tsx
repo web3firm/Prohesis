@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import useSWR from "swr";
 import { Search, Bell, Layers, ChevronRight, MoreVertical, TrendingUp } from "lucide-react";
@@ -21,7 +22,7 @@ interface AdminOverview {
   weeklyRevenue?: number[];
 }
 
-// Sidebar is provided by `src/app/admin/layout.tsx` — do not duplicate here.
+// Sidebar is provided by `src/app/(admin)/layout.tsx` — do not duplicate here.
 
 function HeaderBar() {
   return (

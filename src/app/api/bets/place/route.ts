@@ -6,6 +6,7 @@ import { verifyBetTx } from "@/lib/onchain/writeFunctions";
 import { getOutcomes } from "@/lib/onchain/readFunctions";
 import { z } from "zod";
 import { jsonError } from '@/lib/api/errorResponse';
+import { rateLimit } from '@/lib/api/rateLimit';
 
 const betSchema = z.object({
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
@@ -26,8 +27,14 @@ const betSchema = z.object({
  * We will decode tx logs to find marketId/outcomeIndex/amount and then
  * persist Bet + update Market.totalPool.
  */
+const limiter = rateLimit({ windowMs: 60_000, max: 10 });
 export async function POST(req: Request) {
   try {
+    // Basic per-IP rate limit
+    const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'ip:unknown').split(',')[0].trim();
+    const verdict = limiter(`bets:${ip}`);
+    if (!verdict.allowed) return jsonError('Too many requests', 429);
+
     const body = await req.json();
     const parseResult = betSchema.safeParse(body);
     if (!parseResult.success) {

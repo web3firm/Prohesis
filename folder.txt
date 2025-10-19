@@ -1,0 +1,293 @@
+.
+├── README.md
+├── README_VERCEL.md
+├── contracts
+│   ├── MarketFactory.sol
+│   └── ProhesisPredictionMarket.sol
+├── dev.log
+├── docker-compose.yml
+├── docs
+│   └── PROHESIS.md
+├── folder.txt
+├── hardhat.config.js
+├── middleware.ts
+├── next-env.d.ts
+├── next-start.log
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── prisma
+│   ├── migrations
+│   │   ├── 20251014150147_init
+│   │   │   └── migration.sql
+│   │   ├── 20251015080240_add_onchain_addr
+│   │   │   └── migration.sql
+│   │   ├── 20251016051717_add_market_resolution_fields
+│   │   │   └── migration.sql
+│   │   ├── 20251017035109_add_audit
+│   │   │   └── migration.sql
+│   │   ├── 20251017142823_admin_and_settings
+│   │   │   └── migration.sql
+│   │   ├── 20251019100413_migrate_dev
+│   │   │   └── migration.sql
+│   │   └── migration_lock.toml
+│   └── schema.prisma
+├── public
+│   ├── favicon.ico
+│   ├── hero-pattern.svg
+│   └── manifest.json
+├── scripts
+│   ├── cleanDb.mjs
+│   ├── deployFactory.mjs
+│   ├── deployFactory.sepolia.js
+│   ├── deployFactory.sepolia.mjs
+│   ├── fix-next-chunks.mjs
+│   ├── generate-env.sh
+│   ├── integration-smoke.mjs
+│   ├── list-and-patch-vercel.mjs
+│   ├── listMarkets.mjs
+│   ├── push-github-secrets-noninteractive.sh
+│   ├── push-github-secrets.sh
+│   ├── resyncAll.mjs
+│   ├── runCron.mjs
+│   ├── seed-test-data.mjs
+│   ├── seedFactory.mjs
+│   ├── smoke-test.mjs
+│   ├── syncFactoryToDb.mjs
+│   ├── syncPools.mjs
+│   ├── test-db-connection.mjs
+│   ├── testEndpoints.mjs
+│   └── upsert-vercel-env.mjs
+├── src
+│   ├── app
+│   │   ├── (admin)
+│   │   │   ├── admin
+│   │   │   │   ├── analytics
+│   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── audits
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── auth
+│   │   │   │   │   ├── layout.tsx
+│   │   │   │   │   └── login
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── dashboard
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── markets
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── page.tsx
+│   │   │   │   ├── settings
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── users
+│   │   │   │       ├── [id]
+│   │   │   │       │   └── page.tsx
+│   │   │   │       └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   └── middleware.ts
+│   │   ├── (public)
+│   │   │   ├── about
+│   │   │   │   └── page.tsx
+│   │   │   ├── docs
+│   │   │   │   ├── PROHESIS
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── leaderboard
+│   │   │   │   └── page.tsx
+│   │   │   ├── markets
+│   │   │   │   └── [id]
+│   │   │   │       └── page.tsx
+│   │   │   ├── privacy
+│   │   │   │   └── page.tsx
+│   │   │   ├── terms
+│   │   │   │   └── page.tsx
+│   │   │   └── u
+│   │   │       └── [username]
+│   │   │           └── page.tsx
+│   │   ├── (user)
+│   │   │   └── [username]
+│   │   │       ├── analytics
+│   │   │       │   └── page.tsx
+│   │   │       ├── dashboard
+│   │   │       │   └── page.tsx
+│   │   │       ├── layout.tsx
+│   │   │       ├── profile
+│   │   │       │   └── page.tsx
+│   │   │       └── settings
+│   │   │           └── page.tsx
+│   │   ├── api
+│   │   │   ├── _dev
+│   │   │   │   └── record-payout
+│   │   │   │       └── route.ts
+│   │   │   ├── admin
+│   │   │   │   ├── insights
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── me
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── settings
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── stats
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── users
+│   │   │   │       └── route.ts
+│   │   │   ├── analytics
+│   │   │   │   └── route.ts
+│   │   │   ├── auth
+│   │   │   │   ├── [...nextauth]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── session
+│   │   │   │       └── route.ts
+│   │   │   ├── bets
+│   │   │   │   └── place
+│   │   │   │       └── route.ts
+│   │   │   ├── cron
+│   │   │   │   └── route.ts
+│   │   │   ├── fees
+│   │   │   │   └── route.ts
+│   │   │   ├── init
+│   │   │   │   └── route.ts
+│   │   │   ├── leaderboard
+│   │   │   │   └── route.ts
+│   │   │   ├── markets
+│   │   │   │   ├── create
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── details
+│   │   │   │   │   └── [id]
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── from-factory
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── list
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── resolve
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── sync-from-factory
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── syncPools
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── updateOutcomes
+│   │   │   │       └── route.ts
+│   │   │   ├── payouts
+│   │   │   │   ├── claim
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── validate
+│   │   │   │       └── route.ts
+│   │   │   ├── profile
+│   │   │   │   └── route.ts
+│   │   │   ├── user
+│   │   │   │   ├── analytics
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── bets
+│   │   │   │       └── route.ts
+│   │   │   ├── usernames
+│   │   │   │   └── route.ts
+│   │   │   └── users
+│   │   │       └── route.ts
+│   │   ├── error.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── middleware.ts
+│   │   ├── not-found.tsx
+│   │   ├── page.tsx
+│   │   ├── robots.ts
+│   │   ├── sitemap.ts
+│   │   └── status
+│   │       └── page.tsx
+│   ├── components
+│   │   ├── Markets
+│   │   │   └── MarketListClient.tsx
+│   │   ├── admin
+│   │   │   └── SyncButton.tsx
+│   │   ├── layout
+│   │   │   ├── Header.tsx
+│   │   │   └── Sidebar.tsx
+│   │   ├── shared
+│   │   │   ├── AdminStatsPanel.tsx
+│   │   │   ├── ChartCard.tsx
+│   │   │   ├── EmptyState.tsx
+│   │   │   └── Tooltip.tsx
+│   │   └── ui
+│   │       ├── Button.tsx
+│   │       ├── CreateMarketForm.tsx
+│   │       ├── DBGuard.tsx
+│   │       ├── FiltersBar.tsx
+│   │       ├── Footer.tsx
+│   │       ├── FooterGate.tsx
+│   │       ├── Icons.tsx
+│   │       ├── Input.tsx
+│   │       ├── MarketCard.tsx
+│   │       ├── Modal.tsx
+│   │       ├── Navbar.tsx
+│   │       ├── SkeletonCard.tsx
+│   │       ├── Spinner.tsx
+│   │       ├── Toaster.tsx
+│   │       └── UsernameGate.tsx
+│   ├── context
+│   │   ├── AuthProvider.tsx
+│   │   ├── ThemeProvider.tsx
+│   │   └── Web3Provider.tsx
+│   ├── hooks
+│   │   ├── useAuth.ts
+│   │   ├── useDebounce.ts
+│   │   ├── useFetch.ts
+│   │   └── useWallet.ts
+│   ├── lib
+│   │   ├── api
+│   │   │   ├── errorResponse.ts
+│   │   │   └── rateLimit.ts
+│   │   ├── auth
+│   │   │   ├── admin.ts
+│   │   │   ├── mapAdminToUser.ts
+│   │   │   └── options.ts
+│   │   ├── config
+│   │   │   └── env.ts
+│   │   ├── offchain
+│   │   │   ├── api
+│   │   │   │   ├── bets.ts
+│   │   │   │   ├── markets.ts
+│   │   │   │   ├── payouts.ts
+│   │   │   │   └── users.ts
+│   │   │   ├── services
+│   │   │   │   ├── adminStatsService.ts
+│   │   │   │   ├── analyticsService.ts
+│   │   │   │   ├── cacheClient.ts
+│   │   │   │   └── dbClient.ts
+│   │   │   └── sync
+│   │   │       └── syncBet.ts
+│   │   ├── onchain
+│   │   │   ├── abis
+│   │   │   │   ├── MarketFactory.json
+│   │   │   │   └── ProhesisPredictionMarket.json
+│   │   │   ├── contract.ts
+│   │   │   ├── eventSync.ts
+│   │   │   ├── provider.ts
+│   │   │   ├── readFunctions.ts
+│   │   │   └── writeFunctions.ts
+│   │   └── utils
+│   │       ├── constants.ts
+│   │       ├── env.ts
+│   │       ├── fetcher.ts
+│   │       ├── formatters.ts
+│   │       ├── helpers.ts
+│   │       ├── index.ts
+│   │       └── validators.ts
+│   ├── scripts
+│   │   ├── deploy.ts
+│   │   └── deployFactoryAndMarket.cjs
+│   ├── shims
+│   │   └── async-storage-browser.js
+│   └── styles
+│       ├── theme.css
+│       └── variables.css
+├── tailwind.config.ts
+├── tests
+│   ├── e2e
+│   │   ├── claim-e2e.mjs
+│   │   └── claim.test.mjs
+│   └── unit
+│       ├── adminMe.test.mjs
+│       └── mocha.setup.mjs
+├── tsconfig.json
+├── tsconfig.tsbuildinfo
+└── vercel.json
+
+107 directories, 184 files

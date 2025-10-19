@@ -4,32 +4,24 @@ import { z } from "zod";
 import { jsonError } from '@/lib/api/errorResponse';
 
 // Accept either numeric DB id or string wallet address
-const querySchema = z.object({
-  userId: z.string().min(1),
-});
+const querySchema = z.object({ userId: z.string().min(1).optional(), wallet: z.string().min(1).optional() });
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const parseResult = querySchema.safeParse({ userId: searchParams.get("userId") });
+    const parseResult = querySchema.safeParse({ userId: searchParams.get("userId"), wallet: searchParams.get("wallet") });
     if (!parseResult.success) {
       return jsonError('userId query required', 400, parseResult.error.issues);
     }
-    const userIdRaw = parseResult.data.userId;
+    const userIdRaw = parseResult.data.userId || parseResult.data.wallet;
 
     // Find by id first (id may be a DB id or a wallet-address string),
     // otherwise fall back to displayName / other identifying fields.
-    let user: any = await db.user.findUnique({
-      where: { id: userIdRaw },
-      include: { bets: { include: { market: true } }, payouts: true },
-    });
+    let user: any = await db.user.findUnique({ where: { id: userIdRaw! }, include: { bets: { include: { market: true } }, payouts: true } });
 
     if (!user) {
       // lookup by displayName or other non-id identifier
-      user = await db.user.findFirst({
-        where: { OR: [{ id: userIdRaw }, { displayName: userIdRaw }] },
-        include: { bets: { include: { market: true } }, payouts: true },
-      });
+      user = await db.user.findFirst({ where: { OR: [{ id: userIdRaw }, { displayName: userIdRaw }] }, include: { bets: { include: { market: true } }, payouts: true } });
     }
 
   if (!user) return jsonError('User not found', 404);
@@ -44,7 +36,10 @@ export async function GET(req: Request) {
     );
 
     return NextResponse.json({
-      ...user,
+      profile: {
+        ...user,
+        username: user.username,
+      },
       stats: {
         totalWinnings,
         totalStaked,
@@ -57,5 +52,26 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error("Profile error:", error);
     return jsonError(error?.message ?? 'Internal server error', 500);
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const schema = z.object({
+      wallet: z.string().min(1),
+      displayName: z.string().max(60).optional(),
+      email: z.string().email().optional(),
+      avatarUrl: z.string().url().optional(),
+      bannerUrl: z.string().url().optional(),
+      bio: z.string().max(280).optional(),
+    });
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) return jsonError("Invalid input", 400, parsed.error.issues);
+    const { wallet, ...updates } = parsed.data as any;
+    const user = await db.user.upsert({ where: { id: wallet }, update: updates, create: { id: wallet, ...updates } });
+    return NextResponse.json({ ok: true, profile: user });
+  } catch (e: any) {
+    return jsonError(e?.message ?? "Internal server error", 500);
   }
 }

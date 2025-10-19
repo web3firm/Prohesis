@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 const links = [
-  { href: "/admin", label: "🏠 Dashboard" },
+  { href: "/admin/dashboard", label: "🏠 Dashboard" },
   { href: "/admin/analytics", label: "📊 Analytics" },
   { href: "/admin/Markets", label: "🎯 Markets" },
   { href: "/admin/users", label: "👥 Users" },

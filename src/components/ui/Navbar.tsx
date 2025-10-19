@@ -7,6 +7,8 @@ import { useAccount, useDisconnect, useEnsName, useEnsAvatar } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import Image from "next/image";
+
 
 export default function Navbar() {
   const router = useRouter();
@@ -18,11 +20,25 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
 
+  function goToUser(subpath: string) {
+    // With top-level routes, we can route directly.
+    router.push(`/${subpath}`);
+    setOpen(false);
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
-        <Link href="/app" className="text-lg font-semibold text-blue-600">
+        <Link href="/" className="text-lg font-semibold text-blue-600">
+           <Image
+          src="/logo.jpg"
+          alt="Prohesis Logo"
+          width={32}
+          height={32}
+          priority
+        />
           Prohesis
+      
         </Link>
 
         <input
@@ -59,7 +75,7 @@ export default function Navbar() {
                   <img src={ensAvatar} alt="avatar" className="w-6 h-6 rounded-full" />
                 ) : (
                   <div className="w-6 h-6 rounded-full grid place-items-center bg-blue-200 text-blue-800 text-xs font-semibold">
-                    {(address || "0xU").slice(2, 3).toUpperCase()}
+                    {(ensName || address || "U").toString().slice(0, 1).toUpperCase()}
                   </div>
                 )}
                 <span className="text-sm font-medium text-blue-700 truncate max-w-[120px]">
@@ -87,12 +103,21 @@ export default function Navbar() {
                   >
                     <button
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
-                      onClick={() => {
-                        router.push("/user/Dashboard");
-                        setOpen(false);
-                      }}
+                      onClick={() => goToUser("dashboard")}
                     >
                       🏠 Dashboard
+                    </button>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                      onClick={() => goToUser("profile")}
+                    >
+                      👤 Profile
+                    </button>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                      onClick={() => goToUser("settings")}
+                    >
+                      ⚙️ Settings
                     </button>
                     <div className="border-t my-1" />
                     <button

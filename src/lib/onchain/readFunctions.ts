@@ -2,7 +2,6 @@
 import { getContract } from "viem";
 import { sepolia } from "viem/chains";
 import { ABIS, FACTORY, client as publicClient } from "@/lib/onchain/contract";
-import { CONTRACT_ADDRESS } from "@/lib/utils/constants";
 
 const CHAIN = sepolia;
 void CHAIN;
@@ -75,6 +74,15 @@ export { publicClient };
 // Resolve market address from factory when given a numeric marketId
 export async function resolveMarketAddress(market: number | `0x${string}`): Promise<`0x${string}` | undefined> {
   if (typeof market === "string") return market;
+  // Try DB first: markets table stores onchainAddr by numeric id
+  try {
+    const mod = await import("@/lib/offchain/services/dbClient");
+    const db: any = (mod as any).default || mod;
+    const rec = await db.market.findUnique({ where: { id: market }, select: { onchainAddr: true } });
+    if (rec?.onchainAddr) {
+      return rec.onchainAddr as `0x${string}`;
+    }
+  } catch {}
   if (!FACTORY) return undefined;
   try {
     const factory = getFactoryContract();
@@ -96,6 +104,31 @@ export async function resolveMarketAddress(market: number | `0x${string}`): Prom
   }
 }
 
+// Heuristic: try to locate a market address by matching metadata from the factory
+// This requires that the market exposes title() and endTime() views, which our contract does.
+export async function findMarketAddressByMetadata(title: string, endTimeMs: number): Promise<`0x${string}` | null> {
+  if (!FACTORY) return null;
+  const addresses = await listFactoryMarkets();
+  if (!addresses.length) return null;
+  const normalizedTitle = (title || '').trim();
+  const endSeconds = Math.floor(endTimeMs / 1000);
+  for (const addr of addresses) {
+    try {
+      const market = getMarketContract(addr);
+      const [t, e] = await Promise.all([
+        market.read.title([] as any) as Promise<string>,
+        market.read.endTime([] as any) as Promise<bigint>
+      ]);
+      if ((t || '').trim() === normalizedTitle && Number(e) === endSeconds) {
+        return addr;
+      }
+    } catch {
+      // continue scanning
+    }
+  }
+  return null;
+}
+
 export async function getOutcomes(market: number | `0x${string}`): Promise<string[]> {
   const addr = await resolveMarketAddress(market);
   if (!addr) return [];
@@ -108,4 +141,3 @@ export async function getPools(market: number | `0x${string}`): Promise<number[]
   return getPoolsForMarket(addr);
 }
 
-export { CONTRACT_ADDRESS };

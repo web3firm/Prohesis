@@ -39,7 +39,6 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     localStorage.setItem("userSidebarCollapsed", collapsed ? "1" : "0");
   }, [collapsed]);
 
-  // Gate the entire user area behind wallet connection
   if (!isConnected) {
     return (
       <div className="min-h-screen grid place-items-center" style={{ backgroundColor: "#EAF2FF" }}>
@@ -47,7 +46,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           <div className="text-2xl font-semibold mb-2 text-blue-700">Connect your wallet</div>
           <p className="text-sm text-gray-600 mb-4">Sign in with your wallet to access your dashboard and bets.</p>
           <div className="inline-block"><ConnectButton /></div>
-          <p className="text-xs text-gray-400 mt-4">Or explore markets on the <Link href="/app" className="text-blue-600 hover:underline">main page</Link>.</p>
+          <p className="text-xs text-gray-400 mt-4">Or explore markets on the <Link href="/" className="text-blue-600 hover:underline">main page</Link>.</p>
         </div>
       </div>
     );
@@ -55,17 +54,12 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: "#EAF2FF" }}>
-      {/* Blue sidebar */}
       <aside
         className={`hidden lg:flex flex-col p-4 text-white transition-[width] duration-200 ${collapsed ? "w-20" : "w-64"}`}
         style={{ backgroundColor: "#1D4ED8" }}
       >
         <div className="flex items-center justify-between mb-4">
-          {!collapsed && <div className="px-3 py-2 font-semibold text-lg text-blue-200"><Link href="/app" className="logo">
-  Prohesis
-</Link>
-
-</div>}
+          {!collapsed && <div className="px-3 py-2 font-semibold text-lg text-blue-200"><Link href="/" className="logo">Prohesis</Link></div>}
           <button
             className="ml-auto p-2 rounded-lg hover:bg-white/10"
             onClick={() => setCollapsed((v) => !v)}
@@ -76,10 +70,10 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           </button>
         </div>
         <nav className="flex flex-col gap-1">
-          <NavItem href="/user/Dashboard" label="Dashboard" icon={<Home size={16} />} collapsed={collapsed} />
-          <NavItem href="/user/analytics" label="Analytics" icon={<BarChart2 size={16} />} collapsed={collapsed} />
-          <NavItem href="/user/profile" label="Profile" icon={<UserIcon size={16} />} collapsed={collapsed} />
-          <NavItem href="/user/Settings" label="Settings" icon={<Settings size={16} />} collapsed={collapsed} />
+          <NavItem href="/dashboard" label="Dashboard" icon={<Home size={16} />} collapsed={collapsed} />
+          <NavItem href="/analytics" label="Analytics" icon={<BarChart2 size={16} />} collapsed={collapsed} />
+          <NavItem href="/profile" label="Profile" icon={<UserIcon size={16} />} collapsed={collapsed} />
+          <NavItem href="/settings" label="Settings" icon={<Settings size={16} />} collapsed={collapsed} />
         </nav>
         <div className="mt-auto pt-4 border-t border-white/20 space-y-2">
           <button
@@ -91,19 +85,16 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
             {<Moon size={16} className={theme === "dark" ? "block" : "hidden"} />}
             {!collapsed && <span className="text-sm font-medium">Theme</span>}
           </button>
-          {isConnected && (
-            <button
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white"
-              onClick={() => disconnect()}
-            >
-              <LogOut size={16} />
-              {!collapsed && <span className="text-sm font-medium">Disconnect</span>}
-            </button>
-          )}
+          <button
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white"
+            onClick={() => disconnect()}
+          >
+            <LogOut size={16} />
+            {!collapsed && <span className="text-sm font-medium">Disconnect</span>}
+          </button>
         </div>
       </aside>
 
-      {/* Content area */}
       <div className="flex-1 flex flex-col">
         <main className="p-0 flex-1">{children}</main>
       </div>

@@ -2,7 +2,6 @@ import { decodeEventLog, type Abi, createWalletClient, getContract, http } from 
 import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { publicClient } from "./readFunctions";
-import { CONTRACT_ADDRESS } from "@/lib/utils/constants";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import { syncBetToDB } from "@/lib/offchain/sync/syncBet";
 import { ABIS, FACTORY } from "./contract";
@@ -25,10 +24,8 @@ export async function verifyBetTx(txHash: `0x${string}`) {
 
   if (!receipt || !receipt.to) throw new Error("No receipt or 'to' address for tx");
 
-  // Ensure tx was sent to our contract
-  if (receipt.to.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
-    throw new Error("Transaction did not target the prediction market contract");
-  }
+  // No single global contract; tx "to" address should be a valid market contract.
+  // We don't strictly assert here, as multiple market contracts exist; decoding logs will validate shape.
 
   let parsed: BetPlacedEvent | null = null;
 
@@ -81,7 +78,6 @@ export async function handleBetPlaced(txHash: `0x${string}`) {
 export async function verifyClaimTx(txHash: `0x${string}`) {
   const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
   if (!receipt || !receipt.to) throw new Error("No receipt or 'to' address for tx");
-  if (receipt.to.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) throw new Error("Transaction not to market contract");
 
   for (const log of receipt.logs) {
     try {

@@ -93,3 +93,4 @@ function BetList({ items, empty }: { items: BetItem[]; empty: string }) {
     </ul>
   );
 }
+
