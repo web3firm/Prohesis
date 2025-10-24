@@ -4,14 +4,6 @@ import { rateLimit } from "./src/lib/api/rateLimit";
 
 export async function middleware(req: any) {
   const { pathname } = req.nextUrl;
-  
-  // ULTRA DEBUG - log every matched request
-  console.log(`[MIDDLEWARE HIT] ${pathname}`);
-  
-  const cookieHeader = req.headers.get("cookie") || "";
-  const hasForceAdmin = /(?:^|;\s*)forceAdminDash=1(?:;|$)/.test(cookieHeader);
-  // NextAuth JWT session cookie (dev and prod variants)
-  const hasNextAuthSession = /(?:^|;\s*)(?:__Secure-)?next-auth\.session-token=/.test(cookieHeader);
   const authLimiter = rateLimit({ windowMs: 60_000, max: 20 });
 
   // 🌐 Enforce HTTPS & non-www in production
@@ -39,9 +31,9 @@ export async function middleware(req: any) {
   }
 
   // 🛡️ Rate limit sensitive auth endpoints
-  if (pathname.startsWith("/api/auth/callback/")) {
+  if (pathname.startsWith("/api/auth/")) {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const verdict = authLimiter(`auth:callback:${ip}`);
+    const verdict = authLimiter(`auth:api:${ip}`);
     if (!verdict.allowed) {
       const resp = new NextResponse("Too Many Requests", { status: 429 });
       try { console.log(`middleware rate-limit: ${pathname} from ${ip}`); } catch {}
@@ -56,81 +48,35 @@ export async function middleware(req: any) {
   // Resolve current auth token once for subsequent checks
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  // 🚦 1️⃣ FORCE ADMIN DASH COOKIE — prioritize immediately after login
-  if (pathname === "/dashboard") {
-    console.log(`[DEBUG /dashboard] hasForceAdmin=${hasForceAdmin}, hasNextAuthSession=${hasNextAuthSession}, token.isAdmin=${(token as any)?.isAdmin}`);
-  }
-  
-  if (
-    hasForceAdmin &&
-    // Require an active NextAuth session cookie to avoid redirecting anonymous users
-    hasNextAuthSession &&
-    !pathname.startsWith("/admin") &&
-    !pathname.startsWith("/api") &&
-    !pathname.startsWith("/_next") &&
-    !pathname.startsWith("/static")
-  ) {
-    const to = req.nextUrl.clone();
-    to.pathname = "/admin/dashboard";
-    const res = NextResponse.redirect(to);
-    try { console.log(`middleware forceAdminDash: ${pathname} -> ${to.pathname}`); } catch {}
-    res.headers.set("x-debug-redirect-source", pathname);
-    res.headers.set("x-debug-redirect-target", to.pathname);
-    res.headers.set("x-debug-note", "forceAdminDash+session");
-    return withSecurityHeaders(res);
-  }
-
-  // 🔐 2️⃣ ADMIN ROUTES
+  // � Admin-only routes
   if (pathname.startsWith("/admin")) {
-
     // Redirect bare /admin to /admin/dashboard
     if (pathname === "/admin") {
       const to = req.nextUrl.clone();
       to.pathname = "/admin/dashboard";
       const res = NextResponse.redirect(to);
-      try { console.log(`middleware /admin redirect: ${pathname} -> ${to.pathname}`); } catch {}
       res.headers.set("x-debug-redirect-source", pathname);
       res.headers.set("x-debug-redirect-target", to.pathname);
       return withSecurityHeaders(res);
     }
+
+    const isAdmin = Boolean((token as any)?.isAdmin);
 
     // Already logged-in admin trying to visit login
-    if (pathname === "/admin/auth/login") {
-      if ((token as any)?.isAdmin) {
-        const to = req.nextUrl.clone();
-        to.pathname = "/admin/dashboard";
-        const res = NextResponse.redirect(to);
-        try { console.log(`middleware admin-login redirect: ${pathname} -> ${to.pathname}`); } catch {}
-        res.headers.set("x-debug-redirect-source", pathname);
-        res.headers.set("x-debug-redirect-target", to.pathname);
-        return withSecurityHeaders(res);
-      }
-      return withSecurityHeaders(NextResponse.next());
-    }
-
-    // Not admin → redirect to public home (/)
-    if (!(token as any)?.isAdmin) {
-      const to = req.nextUrl.clone();
-      to.pathname = "/";
-      const res = NextResponse.redirect(to);
-      try { console.log(`middleware non-admin admin/* redirect: ${pathname} -> /`); } catch {}
-      res.headers.set("x-debug-redirect-source", pathname);
-      res.headers.set("x-debug-redirect-target", to.pathname);
-      return withSecurityHeaders(res);
-    }
-
-    return withSecurityHeaders(NextResponse.next());
-  }
-
-  // 👥 3️⃣ USER ROUTES
-  if (["/dashboard", "/analytics", "/profile", "/settings", "/portfolio"].includes(pathname)) {
-
-    // Admins should not see user dashboard
-    if ((token as any)?.isAdmin) {
+    if (pathname === "/admin/auth/login" && isAdmin) {
       const to = req.nextUrl.clone();
       to.pathname = "/admin/dashboard";
       const res = NextResponse.redirect(to);
-      try { console.log(`middleware admin visiting user route: ${pathname} -> ${to.pathname}`); } catch {}
+      res.headers.set("x-debug-redirect-source", pathname);
+      res.headers.set("x-debug-redirect-target", to.pathname);
+      return withSecurityHeaders(res);
+    }
+
+    // Not admin and not the login page → send home
+    if (!isAdmin && pathname !== "/admin/auth/login") {
+      const to = req.nextUrl.clone();
+      to.pathname = "/";
+      const res = NextResponse.redirect(to);
       res.headers.set("x-debug-redirect-source", pathname);
       res.headers.set("x-debug-redirect-target", to.pathname);
       return withSecurityHeaders(res);
@@ -146,11 +92,7 @@ export async function middleware(req: any) {
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/dashboard",
-    "/analytics",
-    "/portfolio",
-    "/profile",
-    "/settings",
+    "/api/auth/:path*",
   ],
 };
 

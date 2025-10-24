@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
-import db from "@/lib/offchain/services/dbClient";
+// Note: Current Prisma schema has no Fee model. This endpoint is a no-op placeholder.
+// If fee accounting is required, extend the schema and update this route accordingly.
+// import db from "@/lib/offchain/services/dbClient";
 import { jsonError } from '@/lib/api/errorResponse';
 
 export async function GET() {
@@ -12,30 +14,8 @@ export async function GET() {
     // If you need to sync fees, specify a contract or range; no-op by default for multi-contract setup.
     const logs: any[] = [];
 
-    for (const log of logs) {
-      const args: any = (log as any).args ?? {};
-      const marketId = args.marketId ?? args[0];
-      const amount = args.amount ?? args[1];
-      const collector = args.collector ?? args[2];
-      try {
-        await db.fee.upsert({
-          where: {
-            id: Number(marketId) || 0,
-          },
-          update: {
-            amount: Number(amount) / 1e18,
-            collectedTo: (collector ?? "").toLowerCase(),
-          },
-          create: {
-            amount: Number(amount) / 1e18,
-            collectedTo: (collector ?? "").toLowerCase(),
-            txHash: log.transactionHash as string,
-          },
-        });
-      } catch (e) {
-        console.warn("fee upsert failed", e);
-      }
-    }
+    // No database writes due to missing Fee model in schema.
+    // Leaving loop for future implementation if needed.
 
     return NextResponse.json({ success: true, count: logs.length });
   } catch (error: any) {

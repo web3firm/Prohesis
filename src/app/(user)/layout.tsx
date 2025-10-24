@@ -7,7 +7,6 @@ import { useState, useEffect } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Home, BarChart2, User as UserIcon, Settings, ChevronLeft, ChevronRight, Sun, Moon, LogOut, Wallet } from "lucide-react";
-import Navbar from "@/components/ui/Navbar";
 
 function NavItem({ href, label, icon, collapsed }: { href: string; label: string; icon: React.ReactNode; collapsed: boolean }) {
   const pathname = usePathname();

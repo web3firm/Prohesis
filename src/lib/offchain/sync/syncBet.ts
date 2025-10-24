@@ -29,7 +29,6 @@ export async function syncBetToDB(bet: VerifiedBet) {
       outcomeIndex: bet.outcomeIndex,
       amount: bet.amountEth,
       txHash: bet.txHash,
-      blockNumber: bet.blockNumber,
     },
   });
 }

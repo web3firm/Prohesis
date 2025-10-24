@@ -11,7 +11,7 @@ export async function listMarkets(opts?: {
   const orderBy = endingSoon
     ? { endTime: "asc" as const }
     : trending
-    ? { volume: "desc" as const }
+    ? { totalPool: "desc" as const }
     : { createdAt: "desc" as const };
 
   return db.market.findMany({
@@ -23,16 +23,14 @@ export async function listMarkets(opts?: {
 
 export async function createMarket(input: {
   title: string;
-  description?: string;
-  creator: string;
+  creator?: string; // maps to creatorId
   onchainAddr: string;
   endTime: Date;
 }) {
   return db.market.create({
     data: {
       title: input.title,
-      description: input.description,
-      creator: input.creator,
+      creatorId: input.creator,
       onchainAddr: input.onchainAddr,
       endTime: input.endTime,
     },
@@ -46,13 +44,13 @@ export async function getMarketByAddress(onchainAddr: string) {
 export async function bumpVolume(onchainAddr: string, amount: number) {
   return db.market.update({
     where: { onchainAddr },
-    data: { volume: { increment: amount } },
+    data: { totalPool: { increment: amount } },
   });
 }
 
 export async function resolveMarket(onchainAddr: string, winning: number) {
   return db.market.update({
     where: { onchainAddr },
-    data: { resolved: true, winning },
+    data: { status: "resolved", winningOutcome: winning },
   });
 }

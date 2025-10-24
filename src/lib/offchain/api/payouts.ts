@@ -4,7 +4,7 @@ export async function recordPayout(input: {
   onchainAddr: string;
   userWallet: string;
   amount: number;
-  txHash: string;
+  txHash?: string; // accepted but not persisted in current schema
 }) {
   // Standardize: use the wallet address itself as the off-chain User.id
   const walletId = input.userWallet.toLowerCase();
@@ -20,7 +20,6 @@ export async function recordPayout(input: {
   return db.payout.create({
     data: {
       amount: input.amount,
-      txHash: input.txHash,
       userId: user.id,
       marketId: market.id,
     },

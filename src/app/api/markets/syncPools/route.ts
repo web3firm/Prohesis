@@ -36,17 +36,8 @@ export async function GET() {
         const pools = await getPoolsForMarket(onchainAddr as `0x${string}`);
         const total = (pools || []).reduce((a, b) => a + b, 0);
 
-        // Upsert into marketPools if the model exists, otherwise update market.totalPool
-        try {
-          await db.marketPools.upsert({
-            where: { market_id: m.id },
-            update: { total_pool: total, last_updated: new Date() },
-            create: { market_id: m.id, total_pool: total, last_updated: new Date() },
-          });
-        } catch {
-          // Fallback: write to market.totalPool
-          await db.market.update({ where: { id: m.id }, data: { totalPool: total } });
-        }
+        // Update Market.totalPool directly (no MarketPool model in current schema)
+        await db.market.update({ where: { id: m.id }, data: { totalPool: total } });
       } catch {
         console.warn("Failed to fetch pools for", m.id);
         continue;

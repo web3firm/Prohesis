@@ -2,117 +2,49 @@
 
 import { signIn } from "next-auth/react";
 import { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useAccount, useSignMessage } from "wagmi";
-import { User, Lock, Eye, EyeOff, Shield, Wallet2 } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Shield } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const { address, isConnected } = useAccount();
-  const { signMessageAsync } = useSignMessage();
-
   // Restore remembered username
   useEffect(() => {
-    const saved = localStorage.getItem("adminU");
+    const saved = localStorage.getItem("adminEmail");
     if (saved) {
-      setUsername(saved);
+      setEmail(saved);
       setRemember(true);
     }
   }, []);
 
   // --------------------------------------------
-  // Admin Login (Env credentials)
+  // Admin Login (credentials)
   // --------------------------------------------
   async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
 
-    console.log("[LOGIN] Starting login process...");
-
     try {
-      console.log("[LOGIN] Calling signIn...");
-      const res: any = await signIn("env-credentials", {
-        username,
+      const res = await signIn("admin-credentials", {
+        email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: "/admin/dashboard",
       });
-
-      console.log("[LOGIN] signIn response:", JSON.stringify(res, null, 2));
-
-      if (res?.error) {
-        console.log("[LOGIN] Error in response:", res.error);
-        setMsg(res.error as string);
-        setLoading(false);
-        return;
-      }
-      
-      if (res?.ok) {
-        console.log("[LOGIN] Login successful! Setting cookie and redirecting...");
-        // Set cookie RIGHT before navigation
-        document.cookie = "forceAdminDash=1; Max-Age=15; Path=/; SameSite=Lax";
-        console.log("[LOGIN] Cookie set, waiting 50ms...");
-        // Small delay to ensure cookie is set
-        await new Promise(resolve => setTimeout(resolve, 50));
-        // Hard navigate to ensure no client/router race conditions
-        console.log("[LOGIN] Navigating to /admin/dashboard...");
-        window.location.href = "/admin/dashboard";
-        return; // prevent clearing msg before navigation
-      }
-
-      console.log("[LOGIN] Unexpected response, not redirecting");
-      setMsg("Unexpected login response");
-
-      if (remember) localStorage.setItem("adminU", username);
-      else localStorage.removeItem("adminU");
+      // When redirect: true, control should not reach here normally.
+      if (remember) localStorage.setItem("adminEmail", email);
+      else localStorage.removeItem("adminEmail");
+      // If it does, show a generic message.
+      setMsg((res as any)?.error || "Redirecting...");
     } catch (err: any) {
       setMsg(err.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // --------------------------------------------
-  // Wallet Login (Signature verification)
-  // --------------------------------------------
-  async function handleWalletLogin() {
-    setMsg(null);
-    if (!isConnected || !address) {
-      setMsg("Please connect your wallet first.");
-      return;
-    }
-    setLoading(true);
-
-    const message = `Prohesis Admin Login\nts=${Date.now()}`;
-
-    try {
-      const signature = await signMessageAsync({ message });
-      const res: any = await signIn("wallet-credentials", {
-        wallet: address,
-        message,
-        signature,
-        redirect: false,
-      });
-      if (res && typeof res === "object" && "error" in res && res.error) {
-        setMsg(res.error as string);
-      } else if (res?.ok !== false) {
-        // Set cookie RIGHT before navigation
-        document.cookie = "forceAdminDash=1; Max-Age=15; Path=/; SameSite=Lax";
-        await new Promise(resolve => setTimeout(resolve, 50));
-        window.location.href = "/admin/dashboard";
-        return;
-      }
-    } catch (err: any) {
-      setMsg(err.message || "Wallet login failed");
     } finally {
       setLoading(false);
     }
@@ -156,18 +88,18 @@ export default function AdminLoginPage() {
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700">Username</label>
+              <label className="text-sm font-medium text-gray-700">Email</label>
               <div className="mt-1 relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <User size={16} />
                 </span>
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full border rounded-xl pl-10 pr-3 py-2.5 bg-white/70 focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="admin"
+                  placeholder="admin@example.com"
                 />
               </div>
             </div>
@@ -222,23 +154,6 @@ export default function AdminLoginPage() {
               {loading ? "Signing in…" : "Login"}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
-
-          {/* Wallet Login */}
-          <button
-            onClick={handleWalletLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 border rounded-xl bg-white hover:bg-gray-50 transition-all"
-          >
-            <Wallet2 size={16} />
-            Sign in with Wallet
-          </button>
 
           <p className="text-xs text-gray-500 text-center mt-4">
             By signing in, you agree to our{" "}

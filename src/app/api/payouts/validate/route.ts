@@ -22,11 +22,11 @@ export async function GET(req: Request) {
   const marketIdRaw = parseResult.data.marketId;
   const userIdRaw = parseResult.data.userId;
   // If marketIdRaw is purely numeric, treat it as the numeric DB id, otherwise it's an onchain address
-  const marketId = /^\d+$/.test(marketIdRaw) ? Number(marketIdRaw) : null;
+  const marketIdNumeric = /^\d+$/.test(marketIdRaw) ? Number(marketIdRaw) : null;
 
     let market = null;
-    if (marketId) {
-      market = await db.market.findUnique({ where: { id: marketId } });
+    if (marketIdNumeric !== null) {
+      market = await db.market.findUnique({ where: { id: marketIdNumeric } });
       // fallback: maybe caller passed an onchainAddr as numeric-like string; try onchainAddr too
       if (!market) {
         market = await db.market.findFirst({ where: { onchainAddr: String(marketIdRaw) } });
@@ -52,15 +52,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ canClaim: false, reason: "Market not resolved yet" });
     }
 
-    // Try by numeric user id or wallet address
+    const marketDbId = market.id;
+
+    // Try by user id or wallet address
     const userBet = await db.bet.findFirst({
-      where: { marketId: marketId, OR: [{ userId: String(userIdRaw) }, { walletAddress: String(userIdRaw) }] },
+      where: { marketId: marketDbId, OR: [{ userId: String(userIdRaw) }, { walletAddress: String(userIdRaw) }] },
     });
     if (!userBet) {
       return NextResponse.json({ canClaim: false, reason: "No bet placed by this user" });
     }
 
-    const alreadyClaimed = await db.payout.findFirst({ where: { marketId: marketId, userId: String(userIdRaw) } });
+  const alreadyClaimed = await db.payout.findFirst({ where: { marketId: marketDbId, userId: String(userIdRaw) } });
     if (alreadyClaimed) return NextResponse.json({ canClaim: false, reason: "Payout already recorded" });
 
     // Determine winning by comparing market.winningOutcome (or winning) with bet.outcomeIndex
