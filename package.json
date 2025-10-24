@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.0",
-  "@nomicfoundation/hardhat-verify": "^4.0.0",
+  "@nomicfoundation/hardhat-verify": "^3.0.2",
     "@openzeppelin/contracts": "^5.4.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.10",
