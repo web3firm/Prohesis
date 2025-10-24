@@ -38,25 +38,58 @@ export const authOptions: NextAuthConfig = {
       id: "admin-credentials",
       name: "Admin",
       credentials: {
-        email: { label: "Email", type: "text" },
+        identity: { label: "Email or Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const email = String(credentials?.email || "").toLowerCase();
+        const identityRaw = String(credentials?.identity || "").trim();
         const password = String(credentials?.password || "");
-        if (!email || !password) return null;
+        if (!identityRaw || !password) return null;
 
-        // Allow either the seeded admin email or the env user, protected by ADMIN_PASS
-        const adminExists = await emailIsInAdminTable(email);
+        const identity = identityRaw.toLowerCase();
         const envEmail = (process.env.ADMIN_USER || "").toLowerCase();
+        const envUsername = (process.env.ADMIN_USERNAME || "").toLowerCase();
         const pass = process.env.ADMIN_PASS || "";
 
-        // Constant-time-ish comparison guardrails
-        const emailAllowed = adminExists || (envEmail && email === envEmail);
         const passAllowed = pass && password === pass;
-        if (!emailAllowed || !passAllowed) return null;
+        if (!passAllowed) return null;
 
-        return { id: email, email, name: "Admin" } satisfies User;
+        let resolvedEmail: string | null = null;
+
+        if (identity.includes("@")) {
+          // Treat as email
+          const adminExists = await emailIsInAdminTable(identity);
+          if (adminExists || (envEmail && identity === envEmail)) {
+            resolvedEmail = identity;
+          }
+        } else {
+          // Treat as username
+          // First check if ADMIN_USERNAME is set and matches
+          if (envUsername && identity === envUsername) {
+            // Use configured admin email if present; otherwise synthesize a local email
+            resolvedEmail = envEmail && envEmail.includes("@") ? envEmail : `${envUsername}@local`;
+          }
+          // Also check if ADMIN_USER (without @) matches the identity
+          else if (envEmail && !envEmail.includes("@") && identity === envEmail) {
+            resolvedEmail = `${envEmail}@local`;
+          }
+          if (!resolvedEmail) {
+            // Try to find admin by email local-part
+            const candidate = await prisma.admin.findFirst({
+              where: { email: { startsWith: identity + "@" } },
+              select: { email: true },
+            });
+            resolvedEmail = candidate?.email || null;
+          }
+          if (!resolvedEmail) {
+            // As a final fallback, allow username with shared ADMIN_PASS, synthesize local email
+            resolvedEmail = `${identity}@local`;
+          }
+        }
+
+        if (!resolvedEmail) return null;
+
+        return { id: resolvedEmail, email: resolvedEmail, name: "Admin", isAdmin: true } as unknown as User;
       },
     }),
   ],
@@ -71,14 +104,36 @@ export const authOptions: NextAuthConfig = {
 
   callbacks: {
     async jwt({ token, user }: JwtArgs) {
+      const prev = Boolean((token as any)?.isAdmin);
       if (user?.email) {
         token.email = user.email;
         // Mark as admin directly on sign-in; also re-check on refresh
-        const envEmail = (process.env.ADMIN_USER || "").toLowerCase();
-        token.isAdmin = user.email.toLowerCase() === envEmail || (await emailIsInAdminTable(user.email));
+        const envUser = (process.env.ADMIN_USER || "").toLowerCase();
+        const envUsername = (process.env.ADMIN_USERNAME || "").toLowerCase();
+        const userEmail = user.email.toLowerCase();
+        
+        // Admin if:
+        // - explicitly marked by authorize
+        // - email matches ADMIN_USER (if it contains @)
+        // - email is synthesized from ADMIN_USER or ADMIN_USERNAME (@local)
+        // - email exists in Admin table
+        const isEnvAdmin = 
+          (envUser.includes("@") && userEmail === envUser) ||
+          (envUser && !envUser.includes("@") && userEmail === `${envUser}@local`) ||
+          (envUsername && userEmail === `${envUsername}@local`);
+        
+        token.isAdmin = prev || (user as any).isAdmin === true || isEnvAdmin || (await emailIsInAdminTable(user.email));
       } else if (token?.email) {
-        const envEmail = (process.env.ADMIN_USER || "").toLowerCase();
-        token.isAdmin = String(token.email).toLowerCase() === envEmail || (await emailIsInAdminTable(String(token.email)));
+        const envUser = (process.env.ADMIN_USER || "").toLowerCase();
+        const envUsername = (process.env.ADMIN_USERNAME || "").toLowerCase();
+        const tokenEmail = String(token.email).toLowerCase();
+        
+        const isEnvAdmin = 
+          (envUser.includes("@") && tokenEmail === envUser) ||
+          (envUser && !envUser.includes("@") && tokenEmail === `${envUser}@local`) ||
+          (envUsername && tokenEmail === `${envUsername}@local`);
+        
+        token.isAdmin = prev || isEnvAdmin || (await emailIsInAdminTable(String(token.email)));
       }
       return token;
     },

@@ -1,40 +1,17 @@
 .
 ├── README.md
-├── README_VERCEL.md
-├── cache
-│   ├── build-info
-│   └── compile-cache.json
+├── admin.txt
 ├── contracts
 │   ├── MarketFactory.sol
 │   └── ProhesisPredictionMarket.sol
-├── dev.log
-├── docker-compose.yml
-├── docs
-│   └── PROHESIS.md
-├── folder.txt
 ├── hardhat.config.js
 ├── middleware.ts
 ├── next-env.d.ts
-├── next-start.log
 ├── next.config.ts
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.mjs
 ├── prisma
-│   ├── migrations
-│   │   ├── 20251014150147_init
-│   │   │   └── migration.sql
-│   │   ├── 20251015080240_add_onchain_addr
-│   │   │   └── migration.sql
-│   │   ├── 20251016051717_add_market_resolution_fields
-│   │   │   └── migration.sql
-│   │   ├── 20251017035109_add_audit
-│   │   │   └── migration.sql
-│   │   ├── 20251017142823_admin_and_settings
-│   │   │   └── migration.sql
-│   │   ├── 20251019100413_migrate_dev
-│   │   │   └── migration.sql
-│   │   └── migration_lock.toml
 │   └── schema.prisma
 ├── public
 │   ├── favicon.ico
@@ -42,49 +19,26 @@
 │   ├── logo.jpg
 │   └── manifest.json
 ├── scripts
-│   ├── cleanDb.mjs
 │   ├── deployFactory.mjs
 │   ├── deployFactory.sepolia.js
-│   ├── deployFactory.sepolia.mjs
-│   ├── fix-next-chunks.mjs
-│   ├── generate-env.sh
-│   ├── integration-smoke.mjs
-│   ├── list-and-patch-vercel.mjs
-│   ├── listMarkets.mjs
-│   ├── prepare-verify.mjs
-│   ├── push-github-secrets-noninteractive.sh
-│   ├── push-github-secrets.sh
-│   ├── resyncAll.mjs
-│   ├── runCron.mjs
-│   ├── seed-admin.mjs
-│   ├── seed-test-data.mjs
-│   ├── seedFactory.mjs
-│   ├── smoke-test.mjs
-│   ├── syncFactoryToDb.mjs
-│   ├── syncPools.mjs
-│   ├── test-db-connection.mjs
-│   ├── testEndpoints.mjs
-│   ├── upsert-vercel-env.mjs
-│   ├── verifyFactory.direct.mjs
-│   └── verifyFactory.mjs
+│   └── deployFactory.sepolia.mjs
 ├── src
 │   ├── app
 │   │   ├── (admin)
 │   │   │   ├── admin
 │   │   │   │   ├── analytics
-│   │   │   │   │   ├── layout.tsx
 │   │   │   │   │   └── page.tsx
 │   │   │   │   ├── audits
 │   │   │   │   │   └── page.tsx
 │   │   │   │   ├── auth
-│   │   │   │   │   ├── layout.tsx
 │   │   │   │   │   └── login
 │   │   │   │   │       └── page.tsx
 │   │   │   │   ├── dashboard
 │   │   │   │   │   └── page.tsx
+│   │   │   │   ├── forbidden
+│   │   │   │   │   └── page.tsx
 │   │   │   │   ├── markets
 │   │   │   │   │   └── page.tsx
-│   │   │   │   ├── page.tsx
 │   │   │   │   ├── settings
 │   │   │   │   │   └── page.tsx
 │   │   │   │   └── users
@@ -195,7 +149,6 @@
 │   │   ├── error.tsx
 │   │   ├── globals.css
 │   │   ├── layout.tsx
-│   │   ├── middleware.ts
 │   │   ├── not-found.tsx
 │   │   ├── page.tsx
 │   │   ├── robots.ts
@@ -230,6 +183,7 @@
 │   │       ├── Navbar.tsx
 │   │       ├── SkeletonCard.tsx
 │   │       ├── Spinner.tsx
+│   │       ├── ThemeToggle.tsx
 │   │       ├── Toaster.tsx
 │   │       └── UsernameGate.tsx
 │   ├── context
@@ -292,17 +246,7 @@
 │   └── types
 │       └── web3auth.d.ts
 ├── tailwind.config.ts
-├── tests
-│   ├── e2e
-│   │   ├── claim-e2e.mjs
-│   │   └── claim.test.mjs
-│   └── unit
-│       ├── adminMe.test.mjs
-│       └── mocha.setup.mjs
 ├── tsconfig.json
-├── tsconfig.tsbuildinfo
-├── vercel.json
-└── verify
-    └── MarketFactory.standard-input.json
+└── vercel.json
 
-112 directories, 194 files
+99 directories, 151 files

@@ -50,6 +50,13 @@ export async function middleware(req: any) {
 
   // � Admin-only routes
   if (pathname.startsWith("/admin")) {
+    // Allow a public post-login stabilizer page to resolve the session, then redirect appropriately
+    if (pathname === "/admin/post-login") {
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-admin-post-login-route", "1");
+      const res = NextResponse.next({ request: { headers: requestHeaders } });
+      return withSecurityHeaders(res);
+    }
     // Redirect bare /admin to /admin/dashboard
     if (pathname === "/admin") {
       const to = req.nextUrl.clone();
@@ -62,28 +69,60 @@ export async function middleware(req: any) {
 
     const isAdmin = Boolean((token as any)?.isAdmin);
 
-    // Already logged-in admin trying to visit login
-    if (pathname === "/admin/auth/login" && isAdmin) {
-      const to = req.nextUrl.clone();
-      to.pathname = "/admin/dashboard";
-      const res = NextResponse.redirect(to);
-      res.headers.set("x-debug-redirect-source", pathname);
-      res.headers.set("x-debug-redirect-target", to.pathname);
+    // Admin login route handling
+    if (pathname === "/admin/auth/login") {
+      if (isAdmin) {
+        const to = req.nextUrl.clone();
+        to.pathname = "/admin/dashboard";
+        const res = NextResponse.redirect(to);
+        res.headers.set("x-debug-redirect-source", pathname);
+        res.headers.set("x-debug-redirect-target", to.pathname);
+        return withSecurityHeaders(res);
+      }
+      // Allow public access to login and mark request so server layout can bypass guard
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set("x-admin-login-route", "1");
+      const res = NextResponse.next({ request: { headers: requestHeaders } });
       return withSecurityHeaders(res);
     }
 
-    // Not admin and not the login page → send home
-    if (!isAdmin && pathname !== "/admin/auth/login") {
+    // Rewrite forbidden to a public page to avoid admin layout execution and redirect loops
+    if (pathname === "/admin/forbidden") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/public-admin-forbidden";
+      const requestHeaders = new Headers(req.headers);
+      // Mark so the (admin) layout bypasses SSR guard if it still renders for this segment
+      requestHeaders.set("x-admin-forbidden-route", "1");
+      const res = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+      res.headers.set("x-debug-rewrite", "/public-admin-forbidden");
+      return withSecurityHeaders(res);
+    }
+
+    // Not admin and not the login page or post-login stabilizer → show forbidden page (enterprise-style error screen)
+    if (!isAdmin && pathname !== "/admin/auth/login" && pathname !== "/admin/forbidden" && pathname !== "/admin/post-login") {
       const to = req.nextUrl.clone();
-      to.pathname = "/";
-      const res = NextResponse.redirect(to);
+      to.pathname = "/admin/forbidden";
+      // Use a redirect to force navigation and avoid serving from bfcache
+      const res = NextResponse.redirect(to, 302);
       res.headers.set("x-debug-redirect-source", pathname);
       res.headers.set("x-debug-redirect-target", to.pathname);
+      res.headers.set("x-debug-note", "unauthorized_admin_access");
       return withSecurityHeaders(res);
     }
 
     return withSecurityHeaders(NextResponse.next());
   }
+
+    // 🔐 Admin-only APIs
+    if (pathname.startsWith("/api/admin")) {
+      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+      const isAdmin = Boolean((token as any)?.isAdmin);
+      if (!isAdmin) {
+        const body = JSON.stringify({ ok: false, error: "unauthorized" });
+        return new NextResponse(body, { status: 401, headers: { "content-type": "application/json" } });
+      }
+      return NextResponse.next();
+    }
 
   // Default pass-through
   return withSecurityHeaders(NextResponse.next());
@@ -92,6 +131,7 @@ export async function middleware(req: any) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    "/api/admin/:path*",
     "/api/auth/:path*",
   ],
 };
@@ -103,6 +143,8 @@ function withSecurityHeaders(res: NextResponse) {
   try {
     const isProd = process.env.NODE_ENV === "production";
     const headers = res.headers;
+    // Prevent caching of authenticated pages to avoid stale admin views via back/forward cache
+    headers.set("Cache-Control", "no-store, private");
     headers.set("X-Frame-Options", "DENY");
     headers.set("X-Content-Type-Options", "nosniff");
     headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

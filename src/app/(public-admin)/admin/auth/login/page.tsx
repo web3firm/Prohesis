@@ -7,7 +7,7 @@ import { User, Lock, Eye, EyeOff, Shield } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
+  const [identity, setIdentity] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -16,9 +16,9 @@ export default function AdminLoginPage() {
 
   // Restore remembered username
   useEffect(() => {
-    const saved = localStorage.getItem("adminEmail");
+    const saved = localStorage.getItem("adminIdentity");
     if (saved) {
-      setEmail(saved);
+      setIdentity(saved);
       setRemember(true);
     }
   }, []);
@@ -33,14 +33,14 @@ export default function AdminLoginPage() {
 
     try {
       const res = await signIn("admin-credentials", {
-        email,
+        identity,
         password,
         redirect: true,
-        callbackUrl: "/admin/dashboard",
+        callbackUrl: "/admin/post-login",
       });
       // When redirect: true, control should not reach here normally.
-      if (remember) localStorage.setItem("adminEmail", email);
-      else localStorage.removeItem("adminEmail");
+      if (remember) localStorage.setItem("adminIdentity", identity);
+      else localStorage.removeItem("adminIdentity");
       // If it does, show a generic message.
       setMsg((res as any)?.error || "Redirecting...");
     } catch (err: any) {
@@ -88,18 +88,18 @@ export default function AdminLoginPage() {
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700">Email</label>
+              <label className="text-sm font-medium text-gray-700">Email or Username</label>
               <div className="mt-1 relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <User size={16} />
                 </span>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={identity}
+                  onChange={(e) => setIdentity(e.target.value)}
                   required
                   className="w-full border rounded-xl pl-10 pr-3 py-2.5 bg-white/70 focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="admin@example.com"
+                  placeholder="admin or admin@example.com"
                 />
               </div>
             </div>
