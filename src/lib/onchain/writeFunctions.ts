@@ -1,5 +1,5 @@
 import { decodeEventLog, type Abi, createWalletClient, getContract, http } from "viem";
-import { sepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { publicClient } from "./readFunctions";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
@@ -59,13 +59,19 @@ export async function verifyBetTx(txHash: `0x${string}`) {
 }
 
 // helper: wallet client built from server PRIVATE_KEY
-const RPC_URL = process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || process.env.SEPOLIA_RPC_URL || process.env.RPC_URL || "";
+const RPC_URL =
+  process.env.BASE_SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC ||
+  process.env.NEXT_PUBLIC_RPC_URL ||
+  process.env.NEXT_PUBLIC_ALCHEMY_RPC ||
+  process.env.RPC_URL ||
+  "https://sepolia.base.org";
 function getWalletClient() {
   const pk = process.env.PRIVATE_KEY;
   if (!pk) throw new Error("PRIVATE_KEY not set in server environment");
   const normalized = pk.startsWith("0x") ? pk : `0x${pk}`;
   const account = privateKeyToAccount(normalized as `0x${string}`);
-  return createWalletClient({ chain: sepolia, transport: http(RPC_URL), account });
+  return createWalletClient({ chain: baseSepolia, transport: http(RPC_URL), account });
 }
 
 export async function handleBetPlaced(txHash: `0x${string}`) {

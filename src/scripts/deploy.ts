@@ -1,28 +1,28 @@
+// @ts-nocheck
 import hre from 'hardhat';
 
 async function main() {
-  // Use any-cast to avoid typing issues during the Next build step.
   const _hre: any = hre;
   const ethers = _hre.ethers as any;
 
   const [deployer] = await ethers.getSigners();
-  console.log("Deploying contracts with:", deployer.address);
+  const deployerAddress = typeof deployer.getAddress === 'function' ? await deployer.getAddress() : deployer.address;
+  console.log("Deploying contracts with:", deployerAddress);
 
-  // Deploy implementation
-  const MarketImpl = await ethers.getContractFactory("ProhesisPredictionMarket");
-  const marketImpl = await MarketImpl.deploy(deployer.address);
-  await marketImpl.deployed();
-  console.log("Market Implementation deployed to:", marketImpl.address);
+  // Deploy MarketFactory with protocol fee params
+  const feeRecipient = process.env.PROTOCOL_FEE_RECIPIENT || deployerAddress;
+  const feeBps = Number(process.env.PROTOCOL_FEE_BPS || 100); // 1%
+  const minBet = BigInt(process.env.MIN_BET_WEI || 0);
 
-  // Deploy factory
-  const MarketFactory = await ethers.getContractFactory("MarketFactory");
-  const factory = await MarketFactory.deploy(
-    marketImpl.address,
-    deployer.address, // feeReceiver
-    250               // 2.5% fee
-  );
-  await factory.deployed();
-  console.log("MarketFactory deployed to:", factory.address);
+  const Factory = await ethers.getContractFactory("MarketFactory");
+  const factory = await Factory.deploy(feeRecipient, feeBps, minBet);
+  if (typeof factory.waitForDeployment === 'function') {
+    await factory.waitForDeployment();
+  } else if (typeof factory.deployed === 'function') {
+    await factory.deployed();
+  }
+  const factoryAddr = typeof factory.getAddress === 'function' ? await factory.getAddress() : factory.address;
+  console.log("MarketFactory deployed to:", factoryAddr);
 }
 
 main()

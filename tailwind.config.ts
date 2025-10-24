@@ -22,18 +22,32 @@ const config: Config = {
           800: "#1e40af",
           900: "#1e3a8a",
         },
+
+        // 🌗 Global palette
+        background: {
+          light: "#f9fafb",
+          dark: "#0d1117",
+        },
+        foreground: {
+          light: "#111827",
+          dark: "#f9fafb",
+        },
       },
+
       backgroundColor: {
         glass: "rgba(255, 255, 255, 0.7)",
         "glass-dark": "rgba(15, 23, 42, 0.6)",
       },
+
       backdropBlur: {
         xs: "2px",
       },
+
       boxShadow: {
         soft: "0 4px 20px rgba(0,0,0,0.05)",
         card: "0 8px 30px rgba(0,0,0,0.08)",
       },
+
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0", transform: "translateY(10px)" },
@@ -43,11 +57,18 @@ const config: Config = {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(59,130,246,0.4)" },
           "50%": { boxShadow: "0 0 10px 4px rgba(59,130,246,0.4)" },
         },
+        rotateIn: {
+          "0%": { transform: "rotate(-90deg)", opacity: "0" },
+          "100%": { transform: "rotate(0deg)", opacity: "1" },
+        },
       },
+
       animation: {
         fadeIn: "fadeIn 0.6s ease-in-out",
         pulseGlow: "pulseGlow 2s infinite ease-in-out",
+        rotateIn: "rotateIn 0.4s ease-out",
       },
+
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },

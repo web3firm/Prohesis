@@ -1,9 +1,7 @@
 .
 ├── README.md
 ├── README_VERCEL.md
-├── cache
-│   ├── build-info
-│   └── compile-cache.json
+├── admin.txt
 ├── contracts
 │   ├── MarketFactory.sol
 │   └── ProhesisPredictionMarket.sol
@@ -72,12 +70,10 @@
 │   │   ├── (admin)
 │   │   │   ├── admin
 │   │   │   │   ├── analytics
-│   │   │   │   │   ├── layout.tsx
 │   │   │   │   │   └── page.tsx
 │   │   │   │   ├── audits
 │   │   │   │   │   └── page.tsx
 │   │   │   │   ├── auth
-│   │   │   │   │   ├── layout.tsx
 │   │   │   │   │   └── login
 │   │   │   │   │       └── page.tsx
 │   │   │   │   ├── dashboard
@@ -230,6 +226,7 @@
 │   │       ├── Navbar.tsx
 │   │       ├── SkeletonCard.tsx
 │   │       ├── Spinner.tsx
+│   │       ├── ThemeToggle.tsx
 │   │       ├── Toaster.tsx
 │   │       └── UsernameGate.tsx
 │   ├── context
@@ -305,4 +302,4 @@
 └── verify
     └── MarketFactory.standard-input.json
 
-112 directories, 194 files
+110 directories, 193 files

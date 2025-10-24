@@ -38,13 +38,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex flex-col gap-1">
           <NavItem href="/admin/dashboard" label="Dashboard" icon={<Home size={16} />} />
           <NavItem href="/admin/analytics" label="Analytics" icon={<BarChart2 size={16} />} />
-          <NavItem href="/admin/Markets" label="Markets" icon={<Store size={16} />} />
+          <NavItem href="/admin/markets" label="Markets" icon={<Store size={16} />} />
           <NavItem href="/admin/users" label="Users" icon={<Users size={16} />} />
           <NavItem href="/admin/audits" label="Audits" icon={<FileText size={16} />} />
           <NavItem href="/admin/settings" label="Settings" icon={<Settings size={16} />} />
         </nav>
         <div className="mt-auto pt-4 border-t border-white/20 space-y-2">
-          <Link href="/admin/Markets" className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 hover:bg-white/10 hover:text-white">
+          <Link href="/admin/markets" className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 hover:bg-white/10 hover:text-white">
             <PlusCircle size={16} />
             <span className="text-sm font-medium">Add market</span>
           </Link>

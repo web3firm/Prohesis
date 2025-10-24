@@ -1,5 +1,5 @@
 import { createPublicClient, http } from "viem";
-import { sepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import MarketABI from "@/lib/onchain/abis/ProhesisPredictionMarket.json";
 import db from "@/lib/offchain/services/dbClient";
 
@@ -9,9 +9,17 @@ const dbAny: any = db;
 // ============================================================
 // 🛰  Initialize Public Client
 // ============================================================
+const RPC_URL =
+  process.env.BASE_SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC ||
+  process.env.NEXT_PUBLIC_RPC_URL ||
+  process.env.NEXT_PUBLIC_ALCHEMY_RPC ||
+  process.env.RPC_URL ||
+  "https://sepolia.base.org";
+
 const publicClient = createPublicClient({
-  chain: sepolia,
-  transport: http(),
+  chain: baseSepolia,
+  transport: http(RPC_URL),
 });
 
 // ============================================================
@@ -68,7 +76,7 @@ export async function startEventListener() {
             await dbAny.bet.create({
               data: {
                 marketId: Number(args.marketId) || 0,
-                walletChainId: sepolia.id,
+                walletChainId: baseSepolia.id,
                 walletAddress: (args.user ?? "").toLowerCase(),
                 outcomeIndex: Number(args.outcomeIndex) || 0,
                 amount: Number(args.amount || 0) / 1e18,

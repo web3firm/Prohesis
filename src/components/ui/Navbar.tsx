@@ -8,6 +8,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import Image from "next/image";
+import ThemeToggle from "./ThemeToggle";
 
 
 export default function Navbar() {
@@ -46,16 +47,9 @@ export default function Navbar() {
           className="hidden md:block w-80 h-10 rounded-full border px-4 text-sm focus:ring-2 focus:ring-blue-500"
         />
 
-        <div className="flex items-center gap-3 relative">
-          {/* Desktop theme toggle */}
-          <button
-            aria-label="Toggle theme"
-            className="hidden md:grid place-items-center size-9 rounded-full border bg-white hover:bg-gray-50"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            title="Toggle theme"
-          >
-            {theme === "dark" ? "🌙" : "☀️"}
-          </button>
+        <div className="flex items-center space-x-2">
+         <ThemeToggle />
+
 
           {!isConnected ? (
             <ConnectButton
@@ -112,6 +106,12 @@ export default function Navbar() {
                       onClick={() => goToUser("profile")}
                     >
                       👤 Profile
+                    </button>
+                    <button
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                      onClick={() => goToUser("portfolio")}
+                    >
+                      💼 Portfolio
                     </button>
                     <button
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"

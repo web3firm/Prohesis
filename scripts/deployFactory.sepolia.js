@@ -1,23 +1,44 @@
 #!/usr/bin/env node
-const fs = require("node:fs");
-const hre = require("hardhat");
-const { ethers, network } = hre;
+import fs from "node:fs";
+import path from "node:path";
+import { createWalletClient, createPublicClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { baseSepolia, sepolia } from "viem/chains";
 
 async function main() {
-  console.log("Network:", network.name);
-  const [deployer] = await ethers.getSigners();
-  console.log("Deployer:", deployer.address);
+  const idx = process.argv.indexOf("--network");
+  const networkName = idx !== -1 ? (process.argv[idx + 1] || "sepolia") : (process.env.HARDHAT_NETWORK || process.env.NETWORK || "sepolia");
+  console.log("Network:", networkName);
 
-  const feeRecipient = process.env.PROTOCOL_FEE_RECIPIENT || deployer.address;
+  const chain = networkName === "baseSepolia" ? baseSepolia : sepolia;
+  const rpcUrl = networkName === "baseSepolia"
+    ? (process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org")
+    : process.env.SEPOLIA_RPC_URL;
+
+  const pk = process.env.PRIVATE_KEY;
+  if (!pk) {
+    throw new Error("No PRIVATE_KEY found in env. Set a funded deployer private key for the target network.");
+  }
+  const account = privateKeyToAccount(pk.startsWith("0x") ? pk : `0x${pk}`);
+  const wallet = createWalletClient({ account, chain, transport: http(rpcUrl) });
+  const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+  const deployerAddress = account.address;
+  console.log("Deployer:", deployerAddress);
+
+  const feeRecipient = process.env.PROTOCOL_FEE_RECIPIENT || deployerAddress;
   const feeBps = Number(process.env.PROTOCOL_FEE_BPS || 100); // default 1%
   const minBet = BigInt(process.env.MIN_BET_WEI || 0);
 
   console.log("Params:", { feeRecipient, feeBps, minBet: minBet.toString() });
 
-  const Factory = await ethers.getContractFactory("MarketFactory");
-  const factory = await Factory.deploy(feeRecipient, feeBps, minBet);
-  await factory.deployed();
-  const addr = factory.address;
+  // Read compiled artifact produced by Hardhat
+  const artifactPath = path.join(process.cwd(), "artifacts", "contracts", "MarketFactory.sol", "MarketFactory.json");
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  const { abi, bytecode } = artifact;
+
+  const hash = await wallet.deployContract({ abi, bytecode, args: [feeRecipient, feeBps, minBet] });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  const addr = receipt.contractAddress;
   console.log("MarketFactory deployed:", addr);
 
   // Update .env.local and .env with NEXT_PUBLIC_FACTORY_CONTRACT
@@ -40,7 +61,7 @@ async function main() {
 
   console.log("To verify:");
   console.log(
-    `  npx hardhat verify --network ${network.name} ${addr} ${feeRecipient} ${feeBps} ${minBet}`
+    `  npx hardhat verify --network ${networkName} ${addr} ${feeRecipient} ${feeBps} ${minBet}`
   );
 }
 

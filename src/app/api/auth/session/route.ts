@@ -1,8 +1,6 @@
-import { NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import { authOptions } from "@/lib/auth/options";
 
-// Minimal session route placeholder. The real implementation should integrate
-// with your authentication/session provider (NextAuth, Clerk, etc.). This file
-// exists so TypeScript's route validator treats it as a module.
-export async function GET() {
-	return NextResponse.json({ session: null });
-}
+// Delegate to NextAuth's built-in session handler to avoid shadowing.
+const auth = NextAuth(authOptions as any);
+export const GET: any = auth.handlers.GET;

@@ -1,32 +1,64 @@
 import { PrismaClient } from "@prisma/client";
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient | undefined };
-
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ["error", "warn"],
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db;
+// Prevent multiple Prisma instances during hot reload in development
+declare global {
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
 }
 
-// Export a loose 'prisma' alias typed as any so legacy plural usages still work.
-export const prisma: any = db as any;
+/**
+ * ✅ Typed Prisma client with singleton pattern
+ * - Prevents multiple connections during dev (hot reload)
+ * - Adds datasource URL for flexibility in staging/prod
+ * - Compatible with Neon/Supabase/Hostinger/VPS PostgreSQL
+ */
+export const db =
+  globalThis.prisma ??
+  new PrismaClient({
+    log: ["warn", "error"],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+  });
 
-// Provide plural aliases used across the codebase (runtime only)
-prisma.markets = db.market;
-prisma.bets = db.bet;
-prisma.payouts = db.payout;
-prisma.users = db.user;
-prisma.marketPools = (db as any).marketPool ?? undefined;
-prisma.marketOutcomes = (db as any).marketOutcome ?? undefined;
-prisma.fees = (db as any).fee ?? undefined;
-prisma.leaderboards = (db as any).leaderboard ?? undefined;
-prisma.transactions = (db as any).transaction ?? undefined;
+// Keep a single persistent client during dev
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prisma = db;
+}
 
-// Default export intentionally returns the loose 'prisma' (any) so older files that
-// use plural properties (e.g. `prisma.users`) will type-check. Prefer importing
-// the named `db` export for typed PrismaClient usage.
+/**
+ * ✅ Safe proxy for legacy plural aliases
+ * e.g., prisma.users.findMany() still works,
+ * without mutating PrismaClient.
+ */
+export const prisma = new Proxy(db, {
+  get(target, prop) {
+    switch (prop) {
+      case "users":
+        return target.user;
+      case "markets":
+        return target.market;
+      case "bets":
+        return target.bet;
+      case "payouts":
+        return target.payout;
+      case "leaderboards":
+        return (target as any).leaderboard;
+      case "transactions":
+        return (target as any).transaction;
+      case "fees":
+        return (target as any).fee;
+      case "marketPools":
+        return (target as any).marketPool;
+      case "marketOutcomes":
+        return (target as any).marketOutcome;
+      default:
+        return (target as any)[prop];
+    }
+  },
+});
+
+// Default export for backward compatibility
 export default prisma;

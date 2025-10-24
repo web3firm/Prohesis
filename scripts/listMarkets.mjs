@@ -8,13 +8,21 @@ const marketJson = JSON.parse(fs.readFileSync(new URL('../src/lib/onchain/abis/P
 
 dotenv.config({ path: new URL('../.env', import.meta.url) });
 
-const RPC = process.env.SEPOLIA_RPC_URL || process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
+const RPC =
+  process.env.BASE_SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC ||
+  process.env.NEXT_PUBLIC_ALCHEMY_RPC ||
+  process.env.RPC_URL ||
+  process.env.SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
 const FACTORY = process.env.NEXT_PUBLIC_FACTORY_CONTRACT;
 
-if (!RPC) throw new Error('RPC URL missing (SEPOLIA_RPC_URL or NEXT_PUBLIC_SEPOLIA_RPC_URL)');
+if (!RPC) throw new Error('RPC URL missing (try BASE_SEPOLIA_RPC_URL or NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL)');
 if (!FACTORY) throw new Error('NEXT_PUBLIC_FACTORY_CONTRACT missing in .env');
 
-const provider = new ethers.providers.JsonRpcProvider(RPC);
+// Ethers v6 provider
+const provider = new ethers.JsonRpcProvider(RPC);
 const factory = new ethers.Contract(FACTORY, factoryJson.abi, provider);
 
 async function main() {
@@ -24,7 +32,7 @@ async function main() {
     addrs = await factory.getAllMarkets();
   } catch (e) {
     try {
-      const total = (await factory.totalMarkets()).toNumber();
+      const total = Number(await factory.totalMarkets());
       for (let i = 0; i < total; i++) {
         const a = await factory.allMarkets(i);
         addrs.push(a);
@@ -40,7 +48,7 @@ async function main() {
     const market = new ethers.Contract(addr, marketJson.abi, provider);
     try {
       const title = await market.title();
-      const endTime = (await market.endTime()).toNumber();
+      const endTime = Number(await market.endTime());
       const resolved = await market.resolved();
       const [yes, no] = await market.getPoolTotals();
       out.push({ address: addr, title, endTime, resolved, yes: yes.toString(), no: no.toString() });

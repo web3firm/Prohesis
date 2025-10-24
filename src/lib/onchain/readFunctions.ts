@@ -1,9 +1,9 @@
 // File: src/lib/onchain/readFunctions.ts
 import { getContract } from "viem";
-import { sepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { ABIS, FACTORY, client as publicClient } from "@/lib/onchain/contract";
 
-const CHAIN = sepolia;
+const CHAIN = baseSepolia;
 void CHAIN;
 
 // Factory contract helper

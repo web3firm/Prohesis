@@ -6,7 +6,8 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Home, BarChart2, User as UserIcon, Settings, ChevronLeft, ChevronRight, Sun, Moon, LogOut } from "lucide-react";
+import { Home, BarChart2, User as UserIcon, Settings, ChevronLeft, ChevronRight, Sun, Moon, LogOut, Wallet } from "lucide-react";
+import Navbar from "@/components/ui/Navbar";
 
 function NavItem({ href, label, icon, collapsed }: { href: string; label: string; icon: React.ReactNode; collapsed: boolean }) {
   const pathname = usePathname();
@@ -72,6 +73,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         <nav className="flex flex-col gap-1">
           <NavItem href="/dashboard" label="Dashboard" icon={<Home size={16} />} collapsed={collapsed} />
           <NavItem href="/analytics" label="Analytics" icon={<BarChart2 size={16} />} collapsed={collapsed} />
+          <NavItem href="/portfolio" label="Portfolio" icon={<Wallet size={16} />} collapsed={collapsed} />
           <NavItem href="/profile" label="Profile" icon={<UserIcon size={16} />} collapsed={collapsed} />
           <NavItem href="/settings" label="Settings" icon={<Settings size={16} />} collapsed={collapsed} />
         </nav>

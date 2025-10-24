@@ -13,7 +13,15 @@ dotenv.config({ path: envPath });
 const factoryJson = JSON.parse(fs.readFileSync(new URL('../src/lib/onchain/abis/MarketFactory.json', import.meta.url), 'utf8'));
 const marketJson = JSON.parse(fs.readFileSync(new URL('../src/lib/onchain/abis/ProhesisPredictionMarket.json', import.meta.url), 'utf8'));
 const prisma = new PrismaClient();
-const RPC = process.env.SEPOLIA_RPC_URL || process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
+// Prefer Base Sepolia now; fallback to generic/public RPC if needed
+const RPC =
+  process.env.BASE_SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC ||
+  process.env.NEXT_PUBLIC_ALCHEMY_RPC ||
+  process.env.RPC_URL ||
+  process.env.SEPOLIA_RPC_URL ||
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
 const FACTORY = process.env.NEXT_PUBLIC_FACTORY_CONTRACT;
 
 if (!RPC || !FACTORY) {
@@ -21,7 +29,8 @@ if (!RPC || !FACTORY) {
   process.exit(1);
 }
 
-const provider = new ethers.providers.JsonRpcProvider(RPC);
+// Ethers v6: JsonRpcProvider moved to top-level export
+const provider = new ethers.JsonRpcProvider(RPC);
 const factory = new ethers.Contract(FACTORY, factoryJson.abi, provider);
 
 async function main() {
@@ -29,7 +38,7 @@ async function main() {
   try {
     addrs = await factory.getAllMarkets();
   } catch (e) {
-    const total = (await factory.totalMarkets()).toNumber();
+    const total = Number(await factory.totalMarkets());
     for (let i = 0; i < total; i++) {
       addrs.push(await factory.allMarkets(i));
     }
@@ -39,9 +48,9 @@ async function main() {
     try {
       const m = new ethers.Contract(addr, marketJson.abi, provider);
       const title = await m.title();
-      const endTime = (await m.endTime()).toNumber();
-      const pools = await m.getPoolTotals();
-      const totalPool = pools[0].add(pools[1]).toString();
+      const endTime = Number(await m.endTime());
+      const pools = await m.getPoolTotals(); // likely returns bigint[] in v6
+      const totalPool = (pools[0] + pools[1]).toString();
       await prisma.market.upsert({
         where: { onchainAddr: addr },
         update: { title, endTime: new Date(endTime * 1000), totalPool: Number(totalPool) / 1e18 },
