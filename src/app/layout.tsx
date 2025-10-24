@@ -4,6 +4,7 @@ import { Web3Provider } from "@/context/Web3Provider";
 import AuthProvider from "@/context/AuthProvider";
 import { ToasterProvider } from "@/components/ui/Toaster";
 import ClientLayout from "@/components/layout/ClientLayout";
+import Navbar from "@/components/layout/Navbar";
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToasterProvider>
             <Web3Provider>
               <AuthProvider>
+                <Navbar />
                 <ClientLayout>{children}</ClientLayout>
               </AuthProvider>
             </Web3Provider>

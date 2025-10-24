@@ -1,10 +1,10 @@
 "use client";
 
 import "@rainbow-me/rainbowkit/styles.css";
-import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, darkTheme, lightTheme } from "@rainbow-me/rainbowkit";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
 
@@ -15,6 +15,7 @@ import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 // Env
 const WEB3AUTH_CLIENT_ID = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "";
 const WEB3AUTH_NETWORK = process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK || "sapphire_devnet";
+const WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
 const RPC_URL =
   process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC ||
   process.env.NEXT_PUBLIC_RPC_URL ||
@@ -22,42 +23,60 @@ const RPC_URL =
   "https://sepolia.base.org";
 
 function buildConnectors() {
-  const list: any[] = [injected()];
-  if (!WEB3AUTH_CLIENT_ID) {
-    console.warn("Web3Auth clientId missing. Set NEXT_PUBLIC_WEB3AUTH_CLIENT_ID to enable Web3Auth in the connect modal.");
-    return list;
+  const list: any[] = [];
+  
+  // Web3Auth connector (social login)
+  if (WEB3AUTH_CLIENT_ID && typeof window !== "undefined") {
+    try {
+      const chainConfig = {
+        chainNamespace: "eip155",
+        chainId: `0x${baseSepolia.id.toString(16)}`,
+        rpcTarget: RPC_URL,
+        displayName: "Base Sepolia",
+        blockExplorer: "https://sepolia.basescan.org",
+        ticker: "ETH",
+        tickerName: "Ethereum",
+      } as const;
+      const privateKeyProvider = new (EthereumPrivateKeyProvider as any)({
+        config: { chainConfig },
+      });
+      const web3AuthInstance = new Web3Auth({
+        clientId: WEB3AUTH_CLIENT_ID,
+        web3AuthNetwork: WEB3AUTH_NETWORK as any,
+        privateKeyProvider,
+        uiConfig: { appName: "Prohesis", mode: "auto" },
+      });
+      const web3authConnector = Web3AuthConnector({
+        web3AuthInstance,
+        id: "web3auth",
+        name: "Web3Auth",
+        type: "web3auth",
+      });
+      list.push(web3authConnector as unknown as any);
+    } catch (e) {
+      console.warn("Web3Auth initialization failed:", (e as any)?.message || e);
+    }
   }
-  // Only on client
-  if (typeof window === "undefined") return list;
-  try {
-    const chainConfig = {
-      chainNamespace: "eip155",
-      chainId: `0x${baseSepolia.id.toString(16)}`,
-      rpcTarget: RPC_URL,
-      displayName: "Base Sepolia",
-      blockExplorer: "https://sepolia.basescan.org",
-      ticker: "ETH",
-      tickerName: "Ethereum",
-    } as const;
-    const privateKeyProvider = new (EthereumPrivateKeyProvider as any)({
-      config: { chainConfig },
-    });
-    const web3AuthInstance = new Web3Auth({
-      clientId: WEB3AUTH_CLIENT_ID,
-      web3AuthNetwork: WEB3AUTH_NETWORK as any,
-      privateKeyProvider,
-      uiConfig: { appName: "Prohesis", mode: "auto" },
-    });
-    const web3authConnector = Web3AuthConnector({
-      web3AuthInstance,
-      id: "web3auth",
-      name: "Web3Auth",
-      type: "web3auth",
-    });
-    list.unshift(web3authConnector as unknown as any);
-  } catch (e) {
-    console.warn("Web3Auth initialization failed:", (e as any)?.message || e);
+  
+  // WalletConnect connector (traditional wallets)
+  if (WALLETCONNECT_PROJECT_ID) {
+    list.push(
+      walletConnect({
+        projectId: WALLETCONNECT_PROJECT_ID,
+        metadata: {
+          name: "Prohesis",
+          description: "Web3 Prediction Market Platform",
+          url: "https://prohesis.com",
+          icons: ["https://prohesis.com/icon.png"],
+        },
+        showQrModal: true,
+      })
+    );
   }
+  
+  // Injected connector (MetaMask, etc.)
+  list.push(injected());
+  
   return list;
 }
 
@@ -75,7 +94,10 @@ export function Web3Provider({ children }: { children: ReactNode }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
-          theme={lightTheme({ accentColor: "#2563eb", borderRadius: "large" })}
+          theme={{
+            lightMode: lightTheme({ accentColor: "#2563eb", borderRadius: "large" }),
+            darkMode: darkTheme({ accentColor: "#3b82f6", borderRadius: "large" }),
+          }}
           modalSize="compact"
         >
           {children}

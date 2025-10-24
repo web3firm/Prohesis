@@ -23,6 +23,7 @@
     "cron:run": "node scripts/runCron.mjs",
     "upsert-vercel": "node scripts/upsert-vercel-env.mjs",
     "test:e2e": "mocha tests/e2e/claim.test.mjs --exit",
+    "test:e2e:full": "mocha tests/e2e-full.mjs --exit",
     "test:unit": "mocha --require tests/unit/mocha.setup.mjs \"tests/unit/**/*.mjs\" --exit"
   },
   "dependencies": {

@@ -8,19 +8,21 @@ datasource db {
 }
 
 model User {
-  id           String   @id @db.VarChar(64)
-  username     String?  @unique
-  displayName  String?
-  email        String?  @unique
-  avatarUrl    String?
-  bannerUrl    String?
-  emailUpdates Boolean  @default(false)
-  marketAlerts Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  bets         Bet[]
-  markets      Market[] @relation("UserMarkets")
-  payouts      Payout[]
+  id                 String   @id @db.VarChar(64)
+  wallet             String?  @unique @db.VarChar(64)
+  username           String?  @unique
+  displayName        String?
+  email              String?  @unique
+  avatarUrl          String?
+  bannerUrl          String?
+  emailUpdates       Boolean  @default(false)
+  emailNotifications Boolean  @default(true)
+  marketAlerts       Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  bets               Bet[]
+  markets            Market[] @relation("UserMarkets")
+  payouts            Payout[]
 }
 
 model Market {

@@ -2,127 +2,241 @@
 
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toaster";
+import { User, Mail, Bell, Save } from "lucide-react";
+import useSWR, { mutate } from "swr";
 
-type Profile = {
-  displayName?: string | null;
-  email?: string | null;
-  avatarUrl?: string | null;
-  bannerUrl?: string | null;
-  bio?: string | null;
-};
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function ProfilePage() {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const router = useRouter();
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<Profile>({});
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [error, setError] = useState("");
+
+  // Real-time profile data
+  const { data: profileData, error: fetchError } = useSWR(
+    address ? `/api/users/profile?wallet=${address}` : null,
+    fetcher,
+    {
+      refreshInterval: 5000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      onSuccess: (data) => {
+        if (data.user) {
+          setUsername(data.user.username || "");
+          setEmail(data.user.email || "");
+          setEmailNotifications(data.user.emailNotifications ?? true);
+        }
+      }
+    }
+  );
 
   useEffect(() => {
-    if (!address) return;
-    (async () => {
-      setLoading(true);
-      const res = await fetch(`/api/profile?wallet=${address}`);
-      const data = await res.json();
-      setProfile({
-        displayName: data?.profile?.displayName ?? "",
-        email: data?.profile?.email ?? "",
-        avatarUrl: data?.profile?.avatarUrl ?? "",
-        bannerUrl: data?.profile?.bannerUrl ?? "",
-        bio: data?.profile?.bio ?? "",
-      });
-      setLoading(false);
-    })();
-  }, [address]);
+    if (!isConnected || !address) {
+      router.push("/");
+      return;
+    }
 
-  const onSave = async () => {
-    if (!address) return;
+    if (fetchError || (profileData && !profileData.user)) {
+      router.push("/signup");
+    }
+  }, [address, isConnected, router, profileData, fetchError]);
+
+  const handleSave = async () => {
+    setError("");
+
+    if (!username.trim()) {
+      setError("Username is required");
+      return;
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      setError("Username must be between 3 and 20 characters");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
     setSaving(true);
-    await fetch("/api/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: address, ...profile }),
-    });
-    setSaving(false);
-    addToast("Profile saved!", "success");
+
+    try {
+      const res = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          wallet: address,
+          username: username.trim(),
+          email: email.trim() || null,
+          emailNotifications,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to update profile");
+        setSaving(false);
+        return;
+      }
+
+      // Immediately revalidate the profile data
+      mutate(`/api/users/profile?wallet=${address}`);
+      
+      addToast("✅ Profile updated successfully!", "success");
+      setSaving(false);
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+      setSaving(false);
+    }
+  };
+
+  if (!profileData) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const getInitials = () => {
+    if (username) {
+      return username.charAt(0).toUpperCase();
+    }
+    if (address) {
+      return address.slice(2, 3).toUpperCase();
+    }
+    return "?";
   };
 
   return (
-    <div className="min-h-[80vh] w-full px-6 py-10 bg-gradient-to-b from-white via-blue-50 to-blue-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6">Profile</h1>
+        {/* Header with Avatar */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-6 border-2 border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-6">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+              {getInitials()}
+            </div>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {username || "Your Profile"}
+              </h1>
+              <div className="font-mono text-sm text-gray-500 dark:text-gray-400 break-all">
+                {address}
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {loading ? (
-          <p className="text-gray-500">Loading…</p>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl bg-white/80 backdrop-blur-xl border shadow-sm p-6 space-y-5"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="text-sm text-gray-600">
-                Display Name
-                <input
-                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={profile.displayName ?? ""}
-                  onChange={(e) => setProfile((p) => ({ ...p, displayName: e.target.value }))}
-                  placeholder="e.g. Satoshi"
-                />
+        {/* Profile Form */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            Edit Profile
+          </h2>
+
+          <div className="space-y-6">
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Username <span className="text-red-500">*</span>
               </label>
-              <label className="text-sm text-gray-600">
-                Email (for updates)
-                <input
-                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={profile.email ?? ""}
-                  onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
-                  placeholder="you@example.com"
+              <div className="relative">
+                <User
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                 />
-              </label>
-              <label className="text-sm text-gray-600">
-                Avatar URL
                 <input
-                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={profile.avatarUrl ?? ""}
-                  onChange={(e) => setProfile((p) => ({ ...p, avatarUrl: e.target.value }))}
-                  placeholder="https://…"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+                  required
+                  minLength={3}
+                  maxLength={20}
                 />
-              </label>
-              <label className="text-sm text-gray-600">
-                Banner URL
-                <input
-                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={profile.bannerUrl ?? ""}
-                  onChange={(e) => setProfile((p) => ({ ...p, bannerUrl: e.target.value }))}
-                  placeholder="https://…"
-                />
-              </label>
+              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                3-20 characters, letters, numbers, and underscores only
+              </p>
             </div>
-            <label className="text-sm text-gray-600 block">
-              Bio
-              <textarea
-                className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-                value={profile.bio ?? ""}
-                onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
-                placeholder="Short intro..."
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email
+              </label>
+              <div className="relative">
+                <Mail
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Receive updates about your markets and bets
+              </p>
+            </div>
+
+            {/* Email Notifications */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <Bell size={20} className="text-gray-600 dark:text-gray-400" />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 dark:text-white">
+                  Email Notifications
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Get notified about market resolutions and bet updates
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={emailNotifications}
+                onChange={(e) => setEmailNotifications(e.target.checked)}
+                className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               />
-            </label>
-            <div className="pt-2">
-              <button
-                onClick={onSave}
-                disabled={saving}
-                className="rounded-xl bg-blue-600 text-white px-5 py-2 shadow hover:shadow-md transition disabled:opacity-60"
-              >
-                {saving ? "Saving…" : "Save Profile"}
-              </button>
             </div>
-          </motion.div>
-        )}
+
+            {error && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save size={20} />
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
 
