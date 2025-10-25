@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toaster";
-import { User, Mail, Bell, Save } from "lucide-react";
+import { User, Mail, Bell, Save, Trophy, Users, Gift, UserCircle } from "lucide-react";
 import useSWR, { mutate } from "swr";
+import { ReputationCard } from '@/components/reputation/ReputationCard';
+import BadgeCard from '@/components/badges/BadgeCard';
+import ReferralCard from '@/components/referrals/ReferralCard';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+type TabType = 'profile' | 'reputation' | 'achievements' | 'referral';
 
 export default function ProfilePage() {
   const { address, isConnected } = useAccount();
@@ -18,6 +23,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<TabType>('profile');
 
   // Real-time profile data
   const { data: profileData, error: fetchError } = useSWR(
@@ -125,11 +131,18 @@ export default function ProfilePage() {
     return "?";
   };
 
+  const tabs = [
+    { id: 'profile' as TabType, label: 'Personal Info', icon: UserCircle },
+    { id: 'reputation' as TabType, label: 'Reputation', icon: Trophy },
+    { id: 'achievements' as TabType, label: 'Achievements', icon: Trophy },
+    { id: 'referral' as TabType, label: 'Referral', icon: Gift },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header with Avatar */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-6 border-2 border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-gray-200 dark:border-gray-700 mb-6">
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
               {getInitials()}
@@ -145,13 +158,37 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Profile Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Edit Profile
-          </h2>
+        {/* Tab Navigation */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 text-sm font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-          <div className="space-y-6">
+        {/* Tab Content */}
+        <div className="space-y-6">{activeTab === 'profile' && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                Edit Profile
+              </h2>
+
+              <div className="space-y-6">
             {/* Username */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -234,9 +271,21 @@ export default function ProfilePage() {
             </button>
           </div>
         </div>
+          )}
+
+          {activeTab === 'reputation' && (
+            <ReputationCard userId={address || ''} wallet={address} />
+          )}
+
+          {activeTab === 'achievements' && (
+            <BadgeCard userId={address || ''} />
+          )}
+
+          {activeTab === 'referral' && (
+            <ReferralCard userId={address || ''} />
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-

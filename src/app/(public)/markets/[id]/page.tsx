@@ -11,6 +11,7 @@ import { getImpliedOddsFromPools, getOutcomesForMarket, getPoolsForMarket } from
 import { recordBet } from "@/lib/offchain/api/bets";
 import DBGuard from '@/components/ui/DBGuard';
 import useSWR from "swr";
+import { AIPredictionCard } from '@/components/ai/AIPredictionCard';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -393,8 +394,12 @@ export default function MarketDetailPage() {
 						</div>
 					</div>
 
-					{/* Claim Section */}
-					<div className="lg:col-span-1">
+					{/* AI Prediction & Claim Section */}
+					<div className="lg:col-span-1 space-y-6">
+						{/* AI Prediction */}
+						<AIPredictionCard marketId={marketId} autoFetch={true} />
+
+						{/* Claim Section */}
 						{isEligibleToClaim && (
 							<div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border-2 border-green-200 dark:border-green-800 p-6 mb-6">
 								<div className="text-center">

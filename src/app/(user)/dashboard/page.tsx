@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import useSWR from "swr";
+import CopyTradingCard from "@/components/copytrading/CopyTradingCard";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,13 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Your Bets</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">Track your active bets, pending claims, and history.</p>
       </div>
+
+      {/* Copy Trading Stats */}
+      {address && (
+        <div className="mb-4">
+          <CopyTradingCard userId={address} />
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="inline-flex bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-1 mb-4 flex-wrap">

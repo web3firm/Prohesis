@@ -18,20 +18,35 @@ model User {
   emailUpdates       Boolean  @default(false)
   emailNotifications Boolean  @default(true)
   marketAlerts       Boolean  @default(true)
+  banned             Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   bets               Bet[]
   markets            Market[] @relation("UserMarkets")
   payouts            Payout[]
+  reputation         Reputation?
+  guildMemberships   GuildMember[]
+  following          Follow[] @relation("Follower")
+  followers          Follow[] @relation("Following")
+  referredBy         String?
+  referrer           User? @relation("Referrals", fields: [referredBy], references: [id], onDelete: SetNull)
+  referrals          User[] @relation("Referrals")
+  achievements       Achievement[]
+  referralRewards    ReferralReward[]
 }
 
 model Market {
   id        Int      @id @default(autoincrement())
   title     String
+  description String?
+  category  String?
+  yesPool   Float?   @default(0)
+  noPool    Float?   @default(0)
   onchainAddr String? @unique
   // Resolution fields: used by server-side validation and integration tests
   status    String?  @default("open")
   winningOutcome Int?
+  resolvedAt DateTime?
   totalPool Float    @default(0)
   endTime   DateTime
   createdAt DateTime @default(now())
@@ -40,6 +55,7 @@ model Market {
   bets      Bet[]
   creator   User?    @relation("UserMarkets", fields: [creatorId], references: [id])
   payouts   Payout[]
+  aiPredictions AIPrediction[]
 }
 
 model Bet {
@@ -54,6 +70,8 @@ model Bet {
   walletAddress String
   market        Market   @relation(fields: [marketId], references: [id])
   user          User?    @relation(fields: [userId], references: [id])
+  leaderCopyTrades CopyTrade[] @relation("LeaderBet")
+  copiedTrades     CopyTrade[] @relation("CopiedBet")
 }
 
 model Payout {
@@ -86,4 +104,133 @@ model Setting {
   key   String @id
   value Json
   updatedAt DateTime @updatedAt
+}
+
+// AI Prediction system
+model AIPrediction {
+  id          Int      @id @default(autoincrement())
+  marketId    Int
+  market      Market   @relation(fields: [marketId], references: [id])
+  predictions Json     // [{outcome, probability, confidence, reasoning}]
+  analysis    String
+  dataPoints  Json     // [string]
+  model       String
+  timestamp   DateTime @default(now())
+  
+  @@index([marketId])
+  @@index([timestamp])
+}
+
+// Reputation system
+model Reputation {
+  id              Int      @id @default(autoincrement())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  totalScore      Float    @default(0)
+  accuracy        Float    @default(0)
+  volume          Float    @default(0)
+  longevity       Float    @default(0)
+  marketCreation  Float    @default(0)
+  socialImpact    Float    @default(0)
+  level           String   @default("Novice")
+  rank            Int?
+  badges          Json     @default("[]")
+  streak          Int      @default(0)
+  lastUpdated     DateTime @default(now())
+  
+  @@index([totalScore])
+  @@index([rank])
+}
+
+// Guild/Team system
+model Guild {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  avatarUrl   String?
+  bannerUrl   String?
+  founderId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     GuildMember[]
+  
+  @@index([name])
+}
+
+model GuildMember {
+  id        Int      @id @default(autoincrement())
+  guildId   Int
+  guild     Guild    @relation(fields: [guildId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      String   @default("member") // member, moderator, admin
+  joinedAt  DateTime @default(now())
+  
+  @@unique([guildId, userId])
+  @@index([userId])
+}
+
+// Copy Trading system
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  String
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  autoCopy    Boolean  @default(false)
+  copyAmount  Float?   // Fixed amount or null for percentage
+  copyPercent Float?   // Percentage of follower's balance
+  createdAt   DateTime @default(now())
+  
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+// Tracks individual copy-traded bets
+model CopyTrade {
+  id          Int      @id @default(autoincrement())
+  followId    Int
+  leaderBetId Int
+  leaderBet   Bet      @relation("LeaderBet", fields: [leaderBetId], references: [id])
+  copiedBetId Int      @unique
+  copiedBet   Bet      @relation("CopiedBet", fields: [copiedBetId], references: [id])
+  createdAt   DateTime @default(now())
+  
+  @@index([followId])
+  @@index([leaderBetId])
+}
+
+// Referral System
+model ReferralReward {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  referredId  String   // Who was referred
+  rewardType  String   // 'signup', 'first_bet', 'volume_milestone'
+  amount      Float    // Reward amount in ETH or points
+  claimed     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([referredId])
+}
+
+// Achievement/Badge System
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  badgeType   String   // 'accuracy', 'volume', 'streak', 'social', 'milestone'
+  badgeTier   String   // 'bronze', 'silver', 'gold', 'platinum', 'diamond'
+  badgeName   String   // 'Perfect 10', 'Volume Lord', 'Hot Streak'
+  description String?
+  iconUrl     String?
+  earnedAt    DateTime @default(now())
+  progress    Int      @default(0) // Current progress toward next tier
+  target      Int      @default(0) // Target for current tier
+  
+  @@unique([userId, badgeType, badgeTier])
+  @@index([userId])
+  @@index([badgeType])
 }

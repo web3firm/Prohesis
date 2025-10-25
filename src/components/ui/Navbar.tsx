@@ -46,6 +46,9 @@ export default function Navbar() {
           placeholder="Search markets..."
           className="hidden md:block w-80 h-10 rounded-full border px-4 text-sm focus:ring-2 focus:ring-blue-500"
         />
+        <Link href="/guilds" className="hidden md:inline-flex items-center ml-4 px-3 py-1 rounded-full text-sm text-blue-600 hover:bg-blue-50">
+          👥 Guilds
+        </Link>
 
         <div className="flex items-center space-x-2">
          <ThemeToggle />
@@ -158,6 +161,13 @@ export default function Navbar() {
                     onClick={() => setMenu(false)}
                   >
                     🏆 Leaderboard
+                  </Link>
+                  <Link
+                    href="/guilds"
+                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setMenu(false)}
+                  >
+                    👥 Guilds
                   </Link>
                   <Link
                     href="/docs"

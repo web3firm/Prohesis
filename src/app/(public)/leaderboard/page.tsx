@@ -1,60 +1,200 @@
-import db from "@/lib/offchain/services/dbClient";
+'use client';
 
-export const dynamic = "force-dynamic";
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  Trophy, 
+  Medal, 
+  TrendingUp, 
+  Target, 
+  Crown,
+  Loader2
+} from 'lucide-react';
+import Link from 'next/link';
 
-async function getLatestLeaderboard() {
-  const latest = await (db as any).leaderboard?.findFirst({ orderBy: { snapshot_date: "desc" }, select: { snapshot_date: true } }) ?? null;
-
-  if (!latest?.snapshot_date) return { date: null, rows: [] as any[] };
-
-  const rows = latest?.snapshot_date
-    ? await (db as any).leaderboard.findMany({ where: { snapshot_date: latest.snapshot_date }, orderBy: [{ position: "asc" }], take: 100 })
-    : [];
-
-  return { date: latest.snapshot_date, rows };
+interface LeaderboardEntry {
+  userId: string;
+  totalScore: number;
+  accuracy: number;
+  volume: number;
+  level: string;
+  rank: number | null;
+  badges: string[];
+  streak: number;
+  user: {
+    id: string;
+    username: string | null;
+    wallet: string | null;
+  };
 }
 
-export default async function LeaderboardPage() {
-  const { date, rows } = await getLatestLeaderboard();
+export default function LeaderboardPage() {
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState('overall');
+
+  useEffect(() => {
+    fetchLeaderboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchLeaderboard = async () => {
+    setLoading(true);
+
+    try {
+      const res = await fetch(`/api/reputation/leaderboard?category=${category}&limit=50`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setLeaderboard(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch leaderboard:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRankIcon = (index: number) => {
+    if (index === 0) return <Trophy className="h-5 w-5 text-yellow-500" />;
+    if (index === 1) return <Medal className="h-5 w-5 text-gray-400" />;
+    if (index === 2) return <Medal className="h-5 w-5 text-orange-600" />;
+    return <span className="text-sm font-semibold text-muted-foreground">#{index + 1}</span>;
+  };
+
+  const getLevelColor = (level: string) => {
+    const colors: Record<string, string> = {
+      Novice: 'text-gray-400',
+      Apprentice: 'text-green-400',
+      Expert: 'text-blue-400',
+      Master: 'text-purple-400',
+      Grandmaster: 'text-yellow-400',
+      Legend: 'text-red-400',
+    };
+    return colors[level] || colors.Novice;
+  };
 
   return (
-    <main className="max-w-4xl mx-auto p-6">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Leaderboard</h1>
-        <p className="text-gray-500">
-          {date ? `Snapshot: ${new Date(date).toLocaleString()}` : "No snapshots yet"}
+    <div className="container mx-auto max-w-6xl px-4 py-8">
+      <div className="mb-8">
+        <h1 className="mb-2 text-4xl font-bold">Leaderboard</h1>
+        <p className="text-muted-foreground">
+          Top predictors ranked by reputation score
         </p>
-      </header>
-
-      <div className="rounded-2xl border-2 border-gray-100 bg-white overflow-x-auto shadow">
-        <table className="w-full text-sm min-w-[500px]">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left px-4 py-2">#</th>
-              <th className="text-left px-4 py-2">User ID</th>
-              <th className="text-left px-4 py-2">Total Winnings</th>
-              <th className="text-left px-4 py-2">Total Staked</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r: any, idx: number) => (
-              <tr key={`${r.snapshot_date}-${r.user_id}`} className={`border-t ${idx < 3 ? "bg-blue-50/40" : ""}`}>
-                <td className="px-4 py-2 font-bold text-lg text-blue-700">{r.position}</td>
-                <td className="px-4 py-2 font-mono">{r.user_id}</td>
-                <td className="px-4 py-2 text-green-700 font-semibold">{Number(r.total_winnings).toLocaleString()}</td>
-                <td className="px-4 py-2 text-blue-700">{Number(r.total_staked).toLocaleString()}</td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
-                  No leaderboard data available yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
-    </main>
+
+      <Tabs value={category} onValueChange={setCategory} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overall">
+            <Trophy className="mr-2 h-4 w-4" />
+            Overall
+          </TabsTrigger>
+          <TabsTrigger value="accuracy">
+            <Target className="mr-2 h-4 w-4" />
+            Accuracy
+          </TabsTrigger>
+          <TabsTrigger value="volume">
+            <TrendingUp className="mr-2 h-4 w-4" />
+            Volume
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={category} className="space-y-4">
+          {loading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </CardContent>
+            </Card>
+          ) : leaderboard.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                No leaderboard data available yet
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.map((entry, index) => (
+                <Card 
+                  key={entry.userId}
+                  className={index < 3 ? 'border-yellow-500/20 bg-gradient-to-r from-yellow-500/5 to-transparent' : ''}
+                >
+                  <CardContent className="flex items-center gap-4 p-4">
+                    {/* Rank */}
+                    <div className="flex w-12 items-center justify-center">
+                      {getRankIcon(index)}
+                    </div>
+
+                    {/* Avatar */}
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback>
+                        {entry.user.username?.[0]?.toUpperCase() || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* User Info */}
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Link 
+                          href={`/profile/${entry.user.wallet || entry.userId}`}
+                          className="font-semibold hover:underline"
+                        >
+                          {entry.user.username || `${entry.user.wallet?.slice(0, 6)}...${entry.user.wallet?.slice(-4)}`}
+                        </Link>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${getLevelColor(entry.level)}`}
+                        >
+                          <Crown className="mr-1 h-3 w-3" />
+                          {entry.level}
+                        </Badge>
+                      </div>
+                      
+                      {entry.badges.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {entry.badges.slice(0, 3).map((badge, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {badge}
+                            </Badge>
+                          ))}
+                          {entry.badges.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{entry.badges.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="text-right space-y-1">
+                      <div className="text-2xl font-bold text-yellow-500">
+                        {Math.round(category === 'overall' ? entry.totalScore : 
+                           category === 'accuracy' ? entry.accuracy : entry.volume)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {category === 'overall' && 'Total Score'}
+                        {category === 'accuracy' && 'Accuracy'}
+                        {category === 'volume' && 'Volume'}
+                      </div>
+                    </div>
+
+                    {/* Streak */}
+                    {entry.streak > 0 && (
+                      <Badge variant="outline" className="border-orange-500/50 text-orange-500">
+                        🔥 {entry.streak}
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
