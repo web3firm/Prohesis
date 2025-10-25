@@ -113,7 +113,7 @@ export async function PATCH(req: NextRequest) {
       case 'ban':
         await db.user.update({
           where: { id: userId },
-          data: { banned: true }
+          data: { banned: true } as any
         });
         
         // Log audit
@@ -129,7 +129,7 @@ export async function PATCH(req: NextRequest) {
       case 'unban':
         await db.user.update({
           where: { id: userId },
-          data: { banned: false }
+          data: { banned: false } as any
         });
         
         await db.audit.create({
@@ -145,7 +145,7 @@ export async function PATCH(req: NextRequest) {
         // Soft delete - mark as deleted
         await db.user.update({
           where: { id: userId },
-          data: { banned: true }
+          data: { banned: true } as any
         });
         
         await db.audit.create({
