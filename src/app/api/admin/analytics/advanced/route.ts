@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
         orderBy: [
           { yesPool: 'desc' },
           { noPool: 'desc' }
-        ],
+        ] as any,
         select: {
           id: true,
           title: true,

@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { ConnectWalletButton } from "@/components/web3/ConnectWalletButton";
-import { Home, BarChart2, User as UserIcon, Settings, ChevronLeft, ChevronRight, Sun, Moon, LogOut, Wallet } from "lucide-react";
+import { Home, BarChart2, User as UserIcon, Settings, PanelLeft, PanelLeftClose, Sun, Moon, LogOut, Wallet } from "lucide-react";
 
 function NavItem({ href, label, icon, collapsed }: { href: string; label: string; icon: React.ReactNode; collapsed: boolean }) {
   const pathname = usePathname();
@@ -79,7 +79,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
             title={collapsed ? "Expand" : "Collapse"}
             aria-label="Toggle sidebar"
           >
-            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            {collapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
           </button>
         </div>
 
