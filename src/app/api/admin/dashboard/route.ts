@@ -63,7 +63,7 @@ export async function GET(req: Request) {
           email: true,
           wallet: true,
           createdAt: true,
-        }
+        } as any
       }),
       db.market.findMany({
         take: 10,
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { username: true, wallet: true } },
+          user: { select: { username: true, wallet: true } as any },
           market: { select: { title: true } }
         }
       }),
