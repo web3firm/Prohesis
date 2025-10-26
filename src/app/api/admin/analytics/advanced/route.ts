@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
           yesPool: true,
           noPool: true,
           _count: { select: { bets: true } }
-        }
+        } as any
       }).then(markets => markets.map(m => ({
         ...m,
         totalVolume: (Number(m.yesPool) + Number(m.noPool)).toFixed(4)
