@@ -175,19 +175,19 @@ async function getUsersByVolume() {
       id: true,
       username: true,
       wallet: true,
-    }
+    } as any
   });
 
   const usersWithVolume = await Promise.all(
     users.map(async (user) => {
       const volume = await db.bet.aggregate({
-        where: { userId: user.id },
+        where: { userId: user.id } as any,
         _sum: { amount: true }
       });
 
       return {
         ...user,
-        volume: volume._sum.amount || 0,
+        volume: volume._sum?.amount || 0,
       };
     })
   );
@@ -205,7 +205,7 @@ async function getUsersByBetCount() {
       username: true,
       wallet: true,
       _count: { select: { bets: true } }
-    },
+    } as any,
     orderBy: {
       bets: { _count: 'desc' }
     }

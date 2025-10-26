@@ -139,10 +139,10 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full p-6 min-h-screen">
+      <div className="w-full">
         {/* Header with Avatar */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-gray-200 dark:border-gray-700 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 mb-6">
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
               {getInitials()}
@@ -159,7 +159,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-2 border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg mb-6 overflow-hidden">
           <div className="flex border-b border-gray-200 dark:border-gray-700">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -183,7 +183,7 @@ export default function ProfilePage() {
 
         {/* Tab Content */}
         <div className="space-y-6">{activeTab === 'profile' && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border-2 border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 Edit Profile
               </h2>

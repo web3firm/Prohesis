@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Twitter, MessageCircle, Github, Send } from "lucide-react";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -20,9 +21,48 @@ export default function Footer() {
                 Prohesis
               </div>
             </Link>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Decentralized prediction markets powered by blockchain technology.
             </p>
+            {/* Social Links */}
+            <div className="flex items-center gap-3">
+              <a
+                href="https://twitter.com/prohesis"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                title="Twitter"
+              >
+                <Twitter size={18} />
+              </a>
+              <a
+                href="https://discord.gg/prohesis"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                title="Discord"
+              >
+                <MessageCircle size={18} />
+              </a>
+              <a
+                href="https://github.com/web3firm/Prohesis"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors"
+                title="GitHub"
+              >
+                <Github size={18} />
+              </a>
+              <a
+                href="https://t.me/prohesis"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
+                title="Telegram"
+              >
+                <Send size={18} />
+              </a>
+            </div>
           </div>
 
           {/* Markets */}
