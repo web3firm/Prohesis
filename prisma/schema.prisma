@@ -93,11 +93,15 @@ model Audit {
 
 // Admins table: grants access to admin panel via email and/or wallet address
 model Admin {
-  id        Int      @id @default(autoincrement())
-  email     String?  @unique
-  wallet    String?  @unique @db.VarChar(64)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  email        String?  @unique
+  wallet       String?  @unique @db.VarChar(64)
+  passwordHash String?  // bcrypt hashed password
+  name         String?  // Display name for admin
+  role         String   @default("admin") // admin, super_admin, moderator
+  isActive     Boolean  @default(true) // Can disable admin access without deleting
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Setting {

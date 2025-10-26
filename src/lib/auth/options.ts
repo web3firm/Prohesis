@@ -10,6 +10,7 @@ import Credentials from "next-auth/providers/credentials";
 import type { NextAuthConfig, User, Session } from "next-auth";
 import type { AdapterUser } from "next-auth/adapters";
 import type { JWT } from "next-auth/jwt";
+import bcrypt from "bcryptjs";
 
 import prisma from "@/lib/offchain/services/dbClient";
 
@@ -20,6 +21,73 @@ async function emailIsInAdminTable(email?: string | null) {
   if (!e) return false;
   const admin = await prisma.admin.findFirst({ where: { email: e }, select: { id: true } });
   return Boolean(admin);
+}
+
+async function authenticateAdmin(identity: string, password: string): Promise<{ email: string; name?: string } | null> {
+  const identityLower = identity.toLowerCase();
+  
+  // Try to find admin in database first
+  const admin = await prisma.admin.findFirst({
+    where: {
+      OR: [
+        { email: identityLower },
+        { wallet: identityLower },
+      ],
+      isActive: true, // Only allow active admins
+    },
+    select: {
+      email: true,
+      wallet: true,
+      passwordHash: true,
+      name: true,
+    }
+  });
+
+  if (admin) {
+    // If admin has a password hash, verify it
+    if (admin.passwordHash) {
+      const passwordMatch = await bcrypt.compare(password, admin.passwordHash);
+      if (passwordMatch) {
+        return { 
+          email: admin.email || admin.wallet || identityLower, 
+          name: admin.name || "Admin" 
+        };
+      }
+    }
+    // If no password hash, check against env variable (fallback for migration)
+    const envPass = process.env.ADMIN_PASS || "";
+    if (envPass && password === envPass) {
+      return { 
+        email: admin.email || admin.wallet || identityLower, 
+        name: admin.name || "Admin" 
+      };
+    }
+  }
+
+  // Fallback to environment variable authentication (for initial setup)
+  const envEmail = (process.env.ADMIN_USER || "").toLowerCase();
+  const envUsername = (process.env.ADMIN_USERNAME || "").toLowerCase();
+  const envPass = process.env.ADMIN_PASS || "";
+
+  if (!envPass || password !== envPass) {
+    return null;
+  }
+
+  // Check if identity matches env credentials
+  if (identity.includes("@")) {
+    if (envEmail && identityLower === envEmail) {
+      return { email: identityLower };
+    }
+  } else {
+    if (envUsername && identityLower === envUsername) {
+      return { email: envEmail && envEmail.includes("@") ? envEmail : `${envUsername}@local` };
+    }
+    if (envEmail && !envEmail.includes("@") && identityLower === envEmail) {
+      return { email: `${envEmail}@local` };
+    }
+  }
+
+  return null;
 }
 
 type JwtArgs = { token: JWT; user?: User | AdapterUser | null };
@@ -46,50 +114,15 @@ export const authOptions: NextAuthConfig = {
         const password = String(credentials?.password || "");
         if (!identityRaw || !password) return null;
 
-        const identity = identityRaw.toLowerCase();
-        const envEmail = (process.env.ADMIN_USER || "").toLowerCase();
-        const envUsername = (process.env.ADMIN_USERNAME || "").toLowerCase();
-        const pass = process.env.ADMIN_PASS || "";
+        const result = await authenticateAdmin(identityRaw, password);
+        if (!result) return null;
 
-        const passAllowed = pass && password === pass;
-        if (!passAllowed) return null;
-
-        let resolvedEmail: string | null = null;
-
-        if (identity.includes("@")) {
-          // Treat as email
-          const adminExists = await emailIsInAdminTable(identity);
-          if (adminExists || (envEmail && identity === envEmail)) {
-            resolvedEmail = identity;
-          }
-        } else {
-          // Treat as username
-          // First check if ADMIN_USERNAME is set and matches
-          if (envUsername && identity === envUsername) {
-            // Use configured admin email if present; otherwise synthesize a local email
-            resolvedEmail = envEmail && envEmail.includes("@") ? envEmail : `${envUsername}@local`;
-          }
-          // Also check if ADMIN_USER (without @) matches the identity
-          else if (envEmail && !envEmail.includes("@") && identity === envEmail) {
-            resolvedEmail = `${envEmail}@local`;
-          }
-          if (!resolvedEmail) {
-            // Try to find admin by email local-part
-            const candidate = await prisma.admin.findFirst({
-              where: { email: { startsWith: identity + "@" } },
-              select: { email: true },
-            });
-            resolvedEmail = candidate?.email || null;
-          }
-          if (!resolvedEmail) {
-            // As a final fallback, allow username with shared ADMIN_PASS, synthesize local email
-            resolvedEmail = `${identity}@local`;
-          }
-        }
-
-        if (!resolvedEmail) return null;
-
-        return { id: resolvedEmail, email: resolvedEmail, name: "Admin", isAdmin: true } as unknown as User;
+        return { 
+          id: result.email, 
+          email: result.email, 
+          name: result.name || "Admin", 
+          isAdmin: true 
+        } as unknown as User;
       },
     }),
   ],
