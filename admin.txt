@@ -1,0 +1,371 @@
+.
+├── admin.txt
+├── contracts
+│   ├── MarketFactory.sol
+│   └── ProhesisPredictionMarket.sol
+├── folder.txt
+├── hardhat.config.js
+├── middleware.ts
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── prisma
+│   └── schema.prisma
+├── public
+│   ├── favicon.ico
+│   ├── hero-pattern.svg
+│   ├── logo.jpg
+│   └── manifest.json
+├── scripts
+│   ├── deployFactory.mjs
+│   ├── deployFactory.sepolia.js
+│   ├── fix-next-chunks.mjs
+│   └── manage-admins.ts
+├── src
+│   ├── app
+│   │   ├── (admin)
+│   │   │   ├── AdminClientLayout.tsx
+│   │   │   ├── admin
+│   │   │   │   ├── analytics
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── audits
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── dashboard
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── markets
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── settings
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── users
+│   │   │   │       ├── [id]
+│   │   │   │       │   └── page.tsx
+│   │   │   │       └── page.tsx
+│   │   │   └── layout.tsx
+│   │   ├── (public)
+│   │   │   ├── about
+│   │   │   │   └── page.tsx
+│   │   │   ├── docs
+│   │   │   │   ├── PROHESIS
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── guilds
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── create
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── leaderboard
+│   │   │   │   └── page.tsx
+│   │   │   ├── markets
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── privacy
+│   │   │   │   └── page.tsx
+│   │   │   ├── signup
+│   │   │   │   └── page.tsx
+│   │   │   ├── terms
+│   │   │   │   └── page.tsx
+│   │   │   ├── traders
+│   │   │   │   └── page.tsx
+│   │   │   └── u
+│   │   │       └── [username]
+│   │   │           └── page.tsx
+│   │   ├── (public-admin)
+│   │   │   └── admin
+│   │   │       ├── auth
+│   │   │       │   └── login
+│   │   │       │       └── page.tsx
+│   │   │       └── post-login
+│   │   │           └── page.tsx
+│   │   ├── (user)
+│   │   │   ├── analytics
+│   │   │   │   └── page.tsx
+│   │   │   ├── dashboard
+│   │   │   │   └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   ├── portfolio
+│   │   │   │   └── page.tsx
+│   │   │   ├── profile
+│   │   │   │   └── page.tsx
+│   │   │   └── settings
+│   │   │       └── page.tsx
+│   │   ├── api
+│   │   │   ├── _dev
+│   │   │   │   └── record-payout
+│   │   │   │       └── route.ts
+│   │   │   ├── admin
+│   │   │   │   ├── analytics
+│   │   │   │   │   └── advanced
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── dashboard
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── insights
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── markets
+│   │   │   │   │   └── list
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── me
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── settings
+│   │   │   │   │   ├── advanced
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── stats
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── users
+│   │   │   │       ├── list
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── route.ts
+│   │   │   ├── ai
+│   │   │   │   ├── accuracy
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── predict
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── predictions
+│   │   │   │       └── route.ts
+│   │   │   ├── analytics
+│   │   │   │   └── route.ts
+│   │   │   ├── auth
+│   │   │   │   ├── [...nextauth]
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── is-admin
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── session
+│   │   │   │       └── route.ts
+│   │   │   ├── badges
+│   │   │   │   ├── check
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── progress
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── bets
+│   │   │   │   └── place
+│   │   │   │       └── route.ts
+│   │   │   ├── copytrading
+│   │   │   │   ├── follow
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── following
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── list
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── stats
+│   │   │   │       └── route.ts
+│   │   │   ├── cron
+│   │   │   │   └── route.ts
+│   │   │   ├── fees
+│   │   │   │   └── route.ts
+│   │   │   ├── guilds
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── members
+│   │   │   │   │   │   ├── role
+│   │   │   │   │   │   │   └── route.ts
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── init
+│   │   │   │   └── route.ts
+│   │   │   ├── leaderboard
+│   │   │   │   └── route.ts
+│   │   │   ├── markets
+│   │   │   │   ├── create
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── details
+│   │   │   │   │   └── [id]
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── from-factory
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── list
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── resolve
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── sync-from-factory
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── syncPools
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── updateOutcomes
+│   │   │   │       └── route.ts
+│   │   │   ├── payouts
+│   │   │   │   ├── claim
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── validate
+│   │   │   │       └── route.ts
+│   │   │   ├── profile
+│   │   │   │   └── route.ts
+│   │   │   ├── referrals
+│   │   │   │   ├── claim
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── code
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── stats
+│   │   │   │       └── route.ts
+│   │   │   ├── reputation
+│   │   │   │   ├── calculate
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── leaderboard
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── update
+│   │   │   │       └── route.ts
+│   │   │   ├── user
+│   │   │   │   ├── analytics
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── bets
+│   │   │   │       └── route.ts
+│   │   │   ├── usernames
+│   │   │   │   └── route.ts
+│   │   │   └── users
+│   │   │       ├── create
+│   │   │       │   └── route.ts
+│   │   │       ├── profile
+│   │   │       │   └── route.ts
+│   │   │       └── route.ts
+│   │   ├── error.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── not-found.tsx
+│   │   ├── page.tsx
+│   │   ├── public-admin-forbidden
+│   │   │   └── page.tsx
+│   │   ├── robots.ts
+│   │   ├── sitemap.ts
+│   │   └── status
+│   │       └── page.tsx
+│   ├── components
+│   │   ├── Markets
+│   │   │   └── MarketListClient.tsx
+│   │   ├── admin
+│   │   │   └── SyncButton.tsx
+│   │   ├── ai
+│   │   │   └── AIPredictionCard.tsx
+│   │   ├── badges
+│   │   │   └── BadgeCard.tsx
+│   │   ├── copytrading
+│   │   │   └── CopyTradingCard.tsx
+│   │   ├── layout
+│   │   │   ├── ClientLayout.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Navbar.tsx
+│   │   │   └── Sidebar.tsx
+│   │   ├── referrals
+│   │   │   └── ReferralCard.tsx
+│   │   ├── reputation
+│   │   │   └── ReputationCard.tsx
+│   │   ├── shared
+│   │   │   ├── AdminStatsPanel.tsx
+│   │   │   ├── ChartCard.tsx
+│   │   │   ├── EmptyState.tsx
+│   │   │   └── Tooltip.tsx
+│   │   ├── ui
+│   │   │   ├── BettingInterface.tsx
+│   │   │   ├── Button.tsx
+│   │   │   ├── CreateMarketForm.tsx
+│   │   │   ├── DBGuard.tsx
+│   │   │   ├── FiltersBar.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── FooterGate.tsx
+│   │   │   ├── Icons.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── MarketCard.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── SkeletonCard.tsx
+│   │   │   ├── Spinner.tsx
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   ├── Toaster.tsx
+│   │   │   ├── UsernameGate.tsx
+│   │   │   ├── avatar.tsx
+│   │   │   ├── badge.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── progress.tsx
+│   │   │   └── tabs.tsx
+│   │   └── web3
+│   │       └── ConnectWalletButton.tsx
+│   ├── config
+│   │   └── index.ts
+│   ├── context
+│   │   ├── AuthProvider.tsx
+│   │   ├── ThemeProvider.tsx
+│   │   └── Web3Provider.tsx
+│   ├── hooks
+│   │   ├── useAuth.ts
+│   │   ├── useDebounce.ts
+│   │   ├── useFetch.ts
+│   │   └── useWallet.ts
+│   ├── lib
+│   │   ├── admin
+│   │   │   └── middleware.ts
+│   │   ├── ai
+│   │   │   └── predictor.ts
+│   │   ├── api
+│   │   │   ├── errorResponse.ts
+│   │   │   └── rateLimit.ts
+│   │   ├── auth
+│   │   │   ├── admin.ts
+│   │   │   ├── index.ts
+│   │   │   ├── mapAdminToUser.ts
+│   │   │   └── options.ts
+│   │   ├── badges
+│   │   │   └── service.ts
+│   │   ├── config
+│   │   │   ├── env.ts
+│   │   │   └── services.ts
+│   │   ├── copytrading
+│   │   │   └── service.ts
+│   │   ├── db.ts
+│   │   ├── guild
+│   │   │   └── service.ts
+│   │   ├── offchain
+│   │   │   ├── api
+│   │   │   │   ├── bets.ts
+│   │   │   │   ├── markets.ts
+│   │   │   │   ├── payouts.ts
+│   │   │   │   └── users.ts
+│   │   │   ├── services
+│   │   │   │   ├── adminStatsService.ts
+│   │   │   │   ├── analyticsService.ts
+│   │   │   │   ├── cacheClient.ts
+│   │   │   │   └── dbClient.ts
+│   │   │   └── sync
+│   │   │       └── syncBet.ts
+│   │   ├── onchain
+│   │   │   ├── abis
+│   │   │   │   ├── MarketFactory.json
+│   │   │   │   └── ProhesisPredictionMarket.json
+│   │   │   ├── contract.ts
+│   │   │   ├── eventSync.ts
+│   │   │   ├── provider.ts
+│   │   │   ├── readFunctions.ts
+│   │   │   └── writeFunctions.ts
+│   │   ├── referrals
+│   │   │   └── service.ts
+│   │   ├── reputation
+│   │   │   └── engine.ts
+│   │   └── utils
+│   │       ├── constants.ts
+│   │       ├── env.ts
+│   │       ├── fetcher.ts
+│   │       ├── formatters.ts
+│   │       ├── helpers.ts
+│   │       ├── index.ts
+│   │       └── validators.ts
+│   ├── scripts
+│   │   ├── deploy.ts
+│   │   └── deployFactoryAndMarket.cjs
+│   ├── shims
+│   │   └── async-storage-browser.js
+│   ├── styles
+│   │   ├── theme.css
+│   │   └── variables.css
+│   └── types
+│       └── web3auth.d.ts
+├── tailwind.config.ts
+├── tests
+│   └── e2e-full.mjs
+├── tsconfig.json
+├── tsconfig.tsbuildinfo
+└── vercel.json
+
+155 directories, 214 files

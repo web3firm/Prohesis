@@ -11,22 +11,40 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
+          50: "#faf5ff",
+          100: "#f3e8ff",
+          200: "#e9d5ff",
+          300: "#d8b4fe",
+          400: "#c084fc",
+          500: "#a855f7",
+          600: "#9333ea",
+          700: "#7e22ce",
+          800: "#6b21a8",
+          900: "#581c87",
+        },
+        purple: {
+          50: "#faf5ff",
+          100: "#f3e8ff",
+          200: "#e9d5ff",
+          300: "#d8b4fe",
+          400: "#c084fc",
+          500: "#a855f7",
+          600: "#9333ea",
+          700: "#7e22ce",
+          800: "#6b21a8",
+          900: "#581c87",
+          950: "#3b0764",
+        },
+        magenta: {
+          500: "#d946ef",
+          600: "#c026d3",
+          700: "#a21caf",
         },
 
         // 🌗 Global palette
         background: {
           light: "#f9fafb",
-          dark: "#0d1117",
+          dark: "#1a0b2e",
         },
         foreground: {
           light: "#111827",
@@ -54,12 +72,20 @@ const config: Config = {
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(59,130,246,0.4)" },
-          "50%": { boxShadow: "0 0 10px 4px rgba(59,130,246,0.4)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(168,85,247,0.4)" },
+          "50%": { boxShadow: "0 0 10px 4px rgba(168,85,247,0.4)" },
         },
         rotateIn: {
           "0%": { transform: "rotate(-90deg)", opacity: "0" },
           "100%": { transform: "rotate(0deg)", opacity: "1" },
+        },
+        wave: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-20px)" },
         },
       },
 
@@ -67,6 +93,8 @@ const config: Config = {
         fadeIn: "fadeIn 0.6s ease-in-out",
         pulseGlow: "pulseGlow 2s infinite ease-in-out",
         rotateIn: "rotateIn 0.4s ease-out",
+        wave: "wave 3s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
       },
 
       fontFamily: {

@@ -31,11 +31,11 @@ export default function DashboardPage() {
   const past = data?.pastBets || [];
 
   return (
-    <div className="w-full p-6 min-h-screen">
+    <div className="w-full p-6 min-h-screen bg-gradient-to-br from-purple-50/10 to-magenta-50/10">
       {/* Top: title + search look (to mirror admin) */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Bets</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track your active bets, pending claims, and history.</p>
+        <h1 className="text-3xl font-bold text-white">Your Bets</h1>
+        <p className="text-sm text-purple-200 mt-1">Track your active bets, pending claims, and history.</p>
       </div>
 
       {/* Copy Trading Stats */}
@@ -46,7 +46,7 @@ export default function DashboardPage() {
       )}
 
       {/* Tabs */}
-      <div className="inline-flex bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-1 mb-6 shadow-sm flex-wrap">
+      <div className="inline-flex bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-1 mb-6 shadow-sm flex-wrap">
         {[
           { key: "active", label: `Active (${active.length})` },
           { key: "pending", label: `Pending Claims (${pending.length})` },
@@ -55,7 +55,7 @@ export default function DashboardPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key as any)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.key ? "bg-blue-600 text-white shadow-md" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t.key ? "bg-gradient-to-r from-purple-600 to-magenta-600 text-white shadow-md" : "text-purple-200 hover:bg-white/10"}`}
           >
             {t.label}
           </button>
@@ -63,9 +63,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Content */}
-      <section className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6">
+      <section className="bg-white/10 backdrop-blur-md rounded-3xl shadow-lg p-6 border border-white/20">
         {isLoading ? (
-          <div className="text-gray-500 dark:text-gray-400">Loading…</div>
+          <div className="text-purple-200">Loading…</div>
         ) : tab === "active" ? (
           <BetList items={active} empty="No active bets." />
         ) : tab === "pending" ? (
@@ -79,17 +79,17 @@ export default function DashboardPage() {
 }
 
 function BetList({ items, empty }: { items: BetItem[]; empty: string }) {
-  if (!items || items.length === 0) return <div className="text-gray-500 dark:text-gray-400 text-sm">{empty}</div>;
+  if (!items || items.length === 0) return <div className="text-purple-200 text-sm">{empty}</div>;
   return (
-    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+    <ul className="divide-y divide-white/10">
       {items.map((b: any) => (
         <li key={b.id} className="py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-medium text-gray-900 dark:text-white truncate">{b.title || `Market ${b.marketId || b.id}`}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{b.status || "Open"}</div>
+            <div className="font-medium text-white truncate">{b.title || `Market ${b.marketId || b.id}`}</div>
+            <div className="text-xs text-purple-300">{b.status || "Open"}</div>
           </div>
           {typeof b.amount !== "undefined" && (
-            <div className="text-sm text-gray-600 dark:text-gray-300">{Number(b.amount).toFixed(4)} ETH</div>
+            <div className="text-sm text-purple-200">{Number(b.amount).toFixed(4)} ETH</div>
           )}
         </li>
       ))}

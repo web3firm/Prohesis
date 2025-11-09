@@ -59,18 +59,18 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="flex min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#4a1e78] transition-colors">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-purple-900/90 backdrop-blur-md border-b border-purple-700/50 px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-lg">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-magenta-600 rounded-lg flex items-center justify-center font-bold text-white text-lg">
             P
           </div>
-          <span className="font-bold text-xl text-gray-900 dark:text-white">Prohesis</span>
+          <span className="font-bold text-xl text-white">Prohesis</span>
         </Link>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -86,7 +86,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
       {/* Mobile Sidebar */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 h-screen w-72 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 dark:from-gray-800 dark:via-gray-900 dark:to-gray-950 text-white shadow-2xl transition-transform duration-300 z-50 ${
+        className={`lg:hidden fixed top-0 left-0 h-screen w-72 bg-gradient-to-br from-purple-900 via-purple-800 to-magenta-900 text-white shadow-2xl transition-transform duration-300 z-50 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         } flex flex-col p-6`}
       >
@@ -143,7 +143,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
       {/* Desktop Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen hidden lg:flex flex-col p-6 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 dark:from-gray-800 dark:via-gray-900 dark:to-gray-950 text-white shadow-2xl transition-[width] duration-300 z-40 ${collapsed ? "w-20" : "w-72"}`}
+        className={`fixed top-0 left-0 h-screen hidden lg:flex flex-col p-6 bg-gradient-to-br from-purple-900 via-purple-800 to-magenta-900 text-white shadow-2xl transition-[width] duration-300 z-40 ${collapsed ? "w-20" : "w-72"}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
